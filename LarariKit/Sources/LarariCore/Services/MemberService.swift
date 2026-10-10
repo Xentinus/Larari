@@ -105,6 +105,7 @@ public final class MemberService {
         let members = ((try? members(in: space)) ?? []).map(MemberSnapshot.init)
         return MemberDirectory.rows(participants: participants, members: members,
                                     currentUserRecordName: userRecordName, newMemberName: Self.newMemberName,
-                                    currentUserIsOwner: sharing.role(for: space) == .owner)
+                                    currentUserIsOwner: sharing.role(for: space) == .owner,
+                                    othersAreFormer: sharing.isKnownUnshared(space))
     }
 }

@@ -47,6 +47,7 @@ final class FakeCloudSharing: CloudSharing {
     }
 
     func share(forObjectWith objectID: NSManagedObjectID) -> CKShare? { coldCache ? nil : sharesByRoot[objectID] }
+    func isKnownUnshared(_ objectID: NSManagedObjectID) -> Bool { !coldCache && sharesByRoot[objectID] == nil }
 
     func fetchShare(forObjectWith objectID: NSManagedObjectID) async -> CKShare? {
         fetchShareCallCount += 1

@@ -101,6 +101,36 @@ struct MemberServiceTests {
         #expect(askedDuringLeave == false)
     }
 
+    @Test func membersOfAKnownUnsharedHouseholdAreFormer() async throws {
+        let space = try await sharing.createHousehold(name: "Flat", ownerDisplayName: "Béla")
+        let other = spaceStore.insert(Member.self, in: space, by: "_x")
+        other.space = space
+        other.userRecordName = "_x"
+        other.colorSeed = "_x"
+        other.displayName = "Xénia"
+        try persistence.viewContext.save()
+        cloud.sharesByRoot[space.objectID] = nil          // sharing stopped
+
+        let rows = service.memberRows(in: space)
+        #expect(rows.first(where: { $0.userRecordName == other.userRecordName })?.status == .departed)
+        #expect(rows.first(where: \.isCurrentUser)?.status == .active)
+    }
+
+    @Test func aColdShareCacheDoesNotTurnMembersIntoFormerMembers() async throws {
+        let space = try await sharing.createHousehold(name: "Flat", ownerDisplayName: "Béla")
+        let other = spaceStore.insert(Member.self, in: space, by: "_x")
+        other.space = space
+        other.userRecordName = "_x"
+        other.colorSeed = "_x"
+        other.displayName = "Xénia"
+        try persistence.viewContext.save()
+        cloud.sharesByRoot[space.objectID] = nil
+        cloud.coldCache = true                            // just launched, nothing known yet
+
+        let rows = service.memberRows(in: space)
+        #expect(rows.first(where: { $0.userRecordName == other.userRecordName })?.status == .active)
+    }
+
     @Test func needsSetupOnlyForEditableSharedHouseholdsWithoutName() async throws {
         let joined = try cloud.simulateJoinedHousehold(named: "Theirs")
         let readOnly = try cloud.simulateJoinedHousehold(named: "RO", readOnly: true)
@@ -132,7 +162,8 @@ struct MemberServiceTests {
 
         let rows = service.memberRows(in: imported)
         #expect(rows.map(\.displayName) == ["Xénia"])
-        #expect(rows.first?.status == .active)
+        // Cloud mode, not shared: nobody else has access, so the archive's members are former members (C-02).
+        #expect(rows.first?.status == .departed)
     }
 
     @Test func memberRowsInLocalModeListTheOwnerRecordAsActive() async throws {

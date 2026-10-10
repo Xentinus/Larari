@@ -104,7 +104,7 @@ public enum MemberDirectory {
     /// it marks the user's own row as the owner, which a share's participant list says otherwise.
     public static func rows(participants: [ParticipantSnapshot], members: [MemberSnapshot],
                             currentUserRecordName: String, newMemberName: String,
-                            currentUserIsOwner: Bool = false) -> [MemberRow] {
+                            currentUserIsOwner: Bool = false, othersAreFormer: Bool = false) -> [MemberRow] {
         var membersByRecord: [String: MemberSnapshot] = [:]
         for member in members where membersByRecord[member.userRecordName] == nil {
             membersByRecord[member.userRecordName] = member
@@ -118,13 +118,17 @@ public enum MemberDirectory {
         var covered = Set<String>()
 
         if participants.isEmpty {
+            // Local mode, or (`othersAreFormer`) a cloud household known to have no share: then nobody else has
+            // access any more, so the others are former members (C-02, user decision 2026-10-10).
             for member in membersByRecord.values {
+                let isCurrentUser = member.userRecordName == currentUserRecordName
+                let former = othersAreFormer && !isCurrentUser
                 rows.append(MemberRow(id: member.userRecordName, displayName: name(member) ?? newMemberName,
                                       userRecordName: member.userRecordName, colorSeed: member.colorSeed,
                                       colorKey: member.colorKey, avatar: member.avatar,
-                                      isOwner: member.userRecordName == currentUserRecordName && currentUserIsOwner,
-                                      permission: .readWrite, status: .active,
-                                      isCurrentUser: member.userRecordName == currentUserRecordName))
+                                      isOwner: isCurrentUser && currentUserIsOwner,
+                                      permission: former ? .unknown : .readWrite, status: former ? .departed : .active,
+                                      isCurrentUser: isCurrentUser))
             }
             return sorted(rows)
         }

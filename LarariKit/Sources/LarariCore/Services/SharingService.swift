@@ -122,6 +122,11 @@ public final class SharingService {
         cloud.share(for: space)
     }
 
+    /// Cloud mode, and the cache already knows the household has no share (sharing stopped, or never shared).
+    public func isKnownUnshared(_ space: Space) -> Bool {
+        cloud.isCloudBacked && cloud.isKnownUnshared(space.objectID)
+    }
+
     public func role(for space: Space) -> HouseholdRole {
         guard space.kind == .household, cloud.share(for: space) != nil else { return .notShared }
         return spaceStore.store(for: space) === persistence.privateStore ? .owner : .participant

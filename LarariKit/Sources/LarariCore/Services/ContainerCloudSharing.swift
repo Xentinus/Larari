@@ -62,6 +62,11 @@ public final class ContainerCloudSharing: CloudSharing {
         states[objectID]?.share
     }
 
+    public func isKnownUnshared(_ objectID: NSManagedObjectID) -> Bool {
+        guard let state = states[objectID] else { return false }
+        return state.share == nil
+    }
+
     public func shares(in store: NSPersistentStore) throws -> [CKShare] {
         var seen = Set<CKRecord.ID>()
         return states

@@ -39,6 +39,8 @@ public protocol CloudSharing: ShareLookup {
     func fetchRecordZoneID(forObjectWith objectID: NSManagedObjectID) async -> CKRecordZone.ID?
     /// Drops purged or deleted objects, so nothing asks the container about them again.
     func forget(_ objectIDs: [NSManagedObjectID])
+    /// True only when the cache already knows the object has no share. False while it is unknown (cold cache).
+    func isKnownUnshared(_ objectID: NSManagedObjectID) -> Bool
 }
 
 extension CloudSharing {
@@ -46,6 +48,7 @@ extension CloudSharing {
     public func share(for space: Space) -> CKShare? { share(forObjectWith: space.objectID) }
 
     public func refreshShares() async {}
+    public func isKnownUnshared(_ objectID: NSManagedObjectID) -> Bool { false }
     public func fetchShare(forObjectWith objectID: NSManagedObjectID) async -> CKShare? { share(forObjectWith: objectID) }
     public func fetchRecordZoneID(forObjectWith objectID: NSManagedObjectID) async -> CKRecordZone.ID? {
         recordZoneID(forObjectWith: objectID)

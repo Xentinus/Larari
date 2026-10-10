@@ -69,6 +69,15 @@ struct MemberDirectoryTests {
         #expect(rows.first?.isCurrentUser == true)
     }
 
+    // C-02 row 4.7 (user decision): in cloud mode a household known to be unshared (Stop Sharing, or iOS deleting the
+    // share with its last participant) lists everyone but you as former members.
+    @Test func knownUnsharedCloudSpaceListsOthersAsFormer() {
+        let rows = MemberDirectory.rows(participants: [], members: [member(me, "Béla"), member("_x", "Xénia")],
+                                        currentUserRecordName: me, newMemberName: newMember, othersAreFormer: true)
+        #expect(rows.first(where: \.isCurrentUser)?.status == .active)
+        #expect(rows.first(where: { !$0.isCurrentUser })?.status == .departed)
+    }
+
     @Test func ordersOwnerThenYouThenActiveByNameThenInvitedThenDeparted() {
         let rows = MemberDirectory.rows(
             participants: [
