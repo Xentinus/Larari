@@ -19,7 +19,7 @@ enum CloudSharingPresenter {
         let controller = UICloudSharingController(share: share, container: CKContainer(identifier: AppModel.containerIdentifier))
         controller.availablePermissions = [.allowPrivate, .allowReadOnly, .allowReadWrite]
         controller.delegate = coordinator
-        controller.popoverPresentationController?.sourceView = top.view
+        controller.modalPresentationStyle = .formSheet        // a centred sheet on iPad, not a popover
         current = coordinator
         top.present(controller, animated: true)
     }
