@@ -105,6 +105,22 @@ struct ContainerCloudSharingTests {
         #expect(Set(backend.requested.last ?? []) == [owned.objectID, joined.objectID])
     }
 
+    // C-02 rows 3.6 and 4.2: an invite, a permission change or an accept changes the share but not its record ID; the
+    // cache must take the new copy, or the members list stays stale until a relaunch.
+    @Test func refreshTakesAnUpdatedCopyOfTheSameShare() async {
+        let zone = SharingFixtures.zoneID()
+        let before = CKShare(recordZoneID: zone)
+        backend.states = [owned.objectID: ShareState(share: before, canUpdate: true)]
+        await sharing.refreshShares()
+
+        let after = CKShare(recordZoneID: zone)
+        after.publicPermission = .readOnly
+        backend.states = [owned.objectID: ShareState(share: after, canUpdate: true)]
+        await sharing.refreshShares()
+
+        #expect(sharing.share(for: owned) === after)
+    }
+
     @Test func aJoinedHouseholdIsReadOnlyUntilThePermissionIsKnown() async {
         #expect(!sharing.canUpdateRecord(forManagedObjectWith: joined.objectID))     // fail closed
         #expect(sharing.canUpdateRecord(forManagedObjectWith: owned.objectID))       // private store: always

@@ -19,9 +19,24 @@ public struct ShareState: @unchecked Sendable, Equatable {
         self.canUpdate = canUpdate
     }
 
+    /// Equal only when nothing the UI shows has changed. An invite, someone else's permission, an accept or a
+    /// removal keeps the record ID, so the participants are compared too (C-02: the members list stayed stale).
     public static func == (lhs: ShareState, rhs: ShareState) -> Bool {
         lhs.share?.recordID == rhs.share?.recordID && lhs.canUpdate == rhs.canUpdate
             && lhs.share?.currentUserParticipant?.permission == rhs.share?.currentUserParticipant?.permission
+            && lhs.share?.recordChangeTag == rhs.share?.recordChangeTag
+            && lhs.share?.publicPermission == rhs.share?.publicPermission
+            && lhs.share.map(Self.participantsSignature) == rhs.share.map(Self.participantsSignature)
+    }
+
+    private static func participantsSignature(_ share: CKShare) -> [String] {
+        share.participants.map { participant in
+            let identity = participant.userIdentity
+            let who = identity.userRecordID?.recordName ?? identity.lookupInfo?.emailAddress
+                ?? identity.lookupInfo?.phoneNumber ?? ""
+            return "\(who)|\(participant.role.rawValue)|\(participant.permission.rawValue)|\(participant.acceptanceStatus.rawValue)"
+        }
+        .sorted()
     }
 }
 
