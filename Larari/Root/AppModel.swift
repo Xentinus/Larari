@@ -69,6 +69,8 @@ final class AppModel {
     let undoQueue = UndoQueue()
     #endif
     private(set) var personalSpace: Space?
+    /// Lets sharing fail at once while offline instead of waiting on NSPCKC (C-02).
+    @ObservationIgnored private let networkPath = NetworkPathMonitor()
     /// Every domain service. Built once the account is available and the Personal space exists.
     private(set) var services: ServiceContainer?
     #if DEBUG
@@ -264,8 +266,10 @@ final class AppModel {
               let personalSpace, let userRecordName = accountGate.userRecordName else { return }
         isBuildingServices = true
         defer { isBuildingServices = false }
+        let network = networkPath
         let sharingService = SharingService(persistence: persistence, spaceStore: spaceStore,
-                                            cloud: cloudSharing, userRecordName: userRecordName)
+                                            cloud: cloudSharing, userRecordName: userRecordName,
+                                            isOnline: { network.isOnline })
         #if DEBUG
         let storeAddressCacheURL = UITestHooks.isActive ? nil : StoreAddressCache.defaultURL
         let storeAddresses: (any StoreAddressResolving)? = UITestHooks.isActive ? nil : MapKitStoreAddressResolver()

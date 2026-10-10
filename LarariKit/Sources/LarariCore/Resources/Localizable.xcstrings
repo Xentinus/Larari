@@ -1253,6 +1253,29 @@
         }
       }
     },
+    "sharing.error.offline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't reach iCloud. Check your connection and try again."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az iCloud nem érhető el. Ellenőrizd a kapcsolatot, és próbáld újra."
+          }
+        }
+      }
+    },
     "sharing.error.personalSpace" : {
       "extractionState" : "manual",
       "localizations" : {

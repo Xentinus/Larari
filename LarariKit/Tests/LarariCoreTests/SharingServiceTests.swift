@@ -49,6 +49,34 @@ struct SharingServiceTests {
         #expect(persisted.share.publicPermission == .none)
     }
 
+    // C-02 row 2.4: offline, NSPCKC's share call blocks for over a minute before it answers, so the service does not
+    // call it at all and reports the household as created but not shared.
+    @Test func createHouseholdOfflineSkipsTheShareCall() async throws {
+        let offline = SharingService(persistence: persistence, spaceStore: spaceStore, cloud: cloud, userRecordName: me,
+                                     isOnline: { false })
+        var thrown: Error?
+        do { _ = try await offline.createHousehold(name: "Offline home") } catch { thrown = error }
+
+        guard case .createdButNotShared(let id)? = thrown as? SharingError else {
+            Issue.record("expected createdButNotShared, got \(String(describing: thrown))"); return
+        }
+        #expect(cloud.shareCallCount == 0)
+        let space = try #require(offline.space(withPublicId: id))
+        #expect(space.name == "Offline home")
+        #expect(offline.role(for: space) == .notShared)
+    }
+
+    @Test func shareExistingSpaceOfflineFailsFast() async throws {
+        let offline = SharingService(persistence: persistence, spaceStore: spaceStore, cloud: cloud, userRecordName: me,
+                                     isOnline: { false })
+        let space = try SharingFixtures.insertSpace(named: "Imported", into: persistence.privateStore, of: persistence, by: me)
+
+        await #expect(throws: SharingError.offline) {
+            _ = try await offline.shareExistingSpace(space)
+        }
+        #expect(cloud.shareCallCount == 0)
+    }
+
     @Test func createHouseholdPlacesItAfterExistingHouseholds() async throws {
         let first = try await service.createHousehold(name: "A")
         let second = try await service.createHousehold(name: "B")

@@ -13,6 +13,8 @@ public enum SharingError: Error, Equatable, LocalizedError {
     case notShared
     case createdButNotShared(spacePublicId: UUID)
     case cloudUnavailable
+    /// No network: NSPCKC's share call would block until it gives up, over a minute (C-02).
+    case offline
 
     public var errorDescription: String? {
         switch self {
@@ -26,6 +28,8 @@ public enum SharingError: Error, Equatable, LocalizedError {
             String(localized: "sharing.error.notShared", defaultValue: "This household isn't shared yet.", bundle: .module)
         case .createdButNotShared:
             String(localized: "sharing.error.createdButNotShared", defaultValue: "The household was created but couldn't be shared yet. Try sharing it again in Settings, from the space menu.", bundle: .module)
+        case .offline:
+            String(localized: "sharing.error.offline", defaultValue: "Couldn't reach iCloud. Check your connection and try again.", bundle: .module)
         case .cloudUnavailable:
             String(localized: "sharing.error.cloudUnavailable", defaultValue: "Sharing needs iCloud — available in the released app.", bundle: .module)
         }
@@ -38,12 +42,17 @@ public final class SharingService {
     public let persistence: PersistenceController
     private let spaceStore: SpaceStore
     private let cloud: any CloudSharing
+    private let isOnline: @MainActor () -> Bool
 
-    public init(persistence: PersistenceController, spaceStore: SpaceStore, cloud: any CloudSharing, userRecordName: String) {
+    /// - Parameter isOnline: checked before every share call. Offline, NSPCKC's share call blocks for over a minute
+    ///   before it answers (C-02), so the service fails at once instead.
+    public init(persistence: PersistenceController, spaceStore: SpaceStore, cloud: any CloudSharing, userRecordName: String,
+                isOnline: @escaping @MainActor () -> Bool = { true }) {
         self.persistence = persistence
         self.spaceStore = spaceStore
         self.cloud = cloud
         self.userRecordName = userRecordName
+        self.isOnline = isOnline
     }
 
     private var context: NSManagedObjectContext { persistence.viewContext }
@@ -97,6 +106,7 @@ public final class SharingService {
 
     @discardableResult
     private func shareRoot(_ space: Space, title: String) async throws -> CKShare {
+        guard isOnline() else { throw SharingError.offline }
         let share = try await cloud.share([space], to: nil)
         share[CKShare.SystemFieldKey.title] = title
         share.publicPermission = .none
