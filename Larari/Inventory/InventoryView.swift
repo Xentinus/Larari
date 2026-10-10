@@ -23,7 +23,7 @@ struct InventoryView: View {
         .navigationTitle("inventory.title")
         .navigationDestination(for: ProductRoute.self) { ProductDetailView(productID: $0.id) }
         .toolbar { toolbar }
-        .task(id: selection.selectedSpaceID) {
+        .task(id: selection.spaceKey) {
             rebuildModel()
             consumeScanRequest()
             consumeExpiryRequest()

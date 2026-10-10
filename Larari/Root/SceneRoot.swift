@@ -1,3 +1,4 @@
+import CoreData
 import LarariCore
 import LarariShared
 import SwiftUI
@@ -28,6 +29,10 @@ struct SceneRoot: View {
                     .environment(undoQueue)
                     .environment(windowRouter)
                     .environment(archiveRouter)
+                    .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange,
+                                                                    object: app.persistence.viewContext)) {
+                        selection.noteObjectsDidChange($0)      // a replaced Space object re-keys the tabs (C-02)
+                    }
                     .onChange(of: selection.selectedSpaceID) { _, id in
                         if route == nil { storedSpaceID = id?.uuidString }      // a route window follows its item
                     }

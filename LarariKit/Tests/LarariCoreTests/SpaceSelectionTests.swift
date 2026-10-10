@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 import Testing
 @testable import LarariCore
@@ -149,5 +150,57 @@ struct SpaceSelectionTests {
 
         let window = SpaceSelection(defaults: defaults, restoredID: flat.publicId)
         #expect(window.resolve(in: try f.store.allSpaces())?.objectID == flat.objectID)
+    }
+
+    // MARK: Space objects replaced (C-02: sign-in, then the import's Personal wins the dedup)
+
+    /// Posts the view context's pending changes and returns the `ObjectsDidChange` notification they produce.
+    private func objectsDidChange(in context: NSManagedObjectContext) -> Notification? {
+        var captured: Notification?
+        let token = NotificationCenter.default.addObserver(forName: .NSManagedObjectContextObjectsDidChange,
+                                                           object: context, queue: nil) { captured = $0 }
+        context.processPendingChanges()
+        NotificationCenter.default.removeObserver(token)
+        return captured
+    }
+
+    @Test func theSpaceKeyChangesWhenTheImportReplacesTheLocalPersonalSpace() throws {
+        let f = try SpaceFixture()
+        let local = try f.store.bootstrapPersonalSpace(userRecordName: "_abc123")
+        let selection = SpaceSelection(defaults: freshDefaults())
+        selection.select(local)
+        let before = selection.spaceKey
+
+        let imported = f.make(Space.self, in: f.persistence.privateStore, publicId: local.publicId,
+                              createdAt: local.createdAt.addingTimeInterval(-3600))
+        imported.kind = .personal
+        imported.name = "Personal"
+        _ = objectsDidChange(in: f.context).map(selection.noteObjectsDidChange)
+        let afterImport = selection.spaceKey
+        _ = try Deduplicator.mergeDuplicates(entityName: "Space", in: f.context)
+        let note = try #require(objectsDidChange(in: f.context))
+        selection.noteObjectsDidChange(note)
+
+        #expect(afterImport != before)                        // a space arrived
+        #expect(selection.spaceKey != afterImport)            // the local copy was deleted
+        #expect(selection.spaceKey.id == local.publicId)      // still the same space for the user
+        #expect(selection.resolve(in: try f.store.allSpaces())?.objectID == imported.objectID)
+    }
+
+    @Test func otherChangesKeepTheSpaceKey() throws {
+        let f = try SpaceFixture()
+        let personal = try f.store.bootstrapPersonalSpace(userRecordName: "_abc123")
+        let selection = SpaceSelection(defaults: freshDefaults())
+        selection.select(personal)
+        let before = selection.spaceKey
+
+        personal.name = "Renamed"
+        let location = f.make(StorageLocation.self, in: f.persistence.privateStore)
+        location.name = "Fridge"
+        location.space = personal
+        let note = try #require(objectsDidChange(in: f.context))
+        selection.noteObjectsDidChange(note)
+
+        #expect(selection.spaceKey == before)
     }
 }

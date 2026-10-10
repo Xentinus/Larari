@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 import Observation
 
@@ -11,6 +12,17 @@ public final class SpaceSelection {
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var storedID: UUID?
+    /// Counts Space objects inserted into or deleted from the view context, see `noteObjectsDidChange(_:)`.
+    private var spaceGeneration = 0
+
+    /// What a view keys its space-dependent work on. It changes when the user picks another space, and also when
+    /// the selected space's object is replaced by another one with the same `publicId`: after an iCloud sign-in the
+    /// app creates Personal before the import arrives, and the import's older copy wins the dedup (C-02). A key on
+    /// the id alone would keep the view on the deleted copy.
+    public struct Key: Hashable, Sendable {
+        public let id: UUID?
+        let generation: Int
+    }
 
     /// - Parameter restoredID: the window's own space from its scene storage (N-03). Without one, the window starts
     ///   from the space last picked in any window.
@@ -47,6 +59,18 @@ public final class SpaceSelection {
             return match
         }
         return spaces.first(where: { $0.kind == .personal }) ?? spaces.first
+    }
+
+    public var spaceKey: Key { Key(id: selectedSpaceID, generation: spaceGeneration) }
+
+    /// Feed every `NSManagedObjectContextObjectsDidChange` of the view context here. A Space inserted or deleted
+    /// (sync, dedup, leave, delete) changes `spaceKey`, so views resolve their space again.
+    public func noteObjectsDidChange(_ notification: Notification) {
+        let info = notification.userInfo ?? [:]
+        let touched = [NSInsertedObjectsKey, NSDeletedObjectsKey].contains { key in
+            (info[key] as? Set<NSManagedObject>)?.contains { $0 is Space } ?? false
+        }
+        if touched { spaceGeneration += 1 }
     }
 
     public func select(_ space: Space) {

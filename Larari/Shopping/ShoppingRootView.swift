@@ -21,5 +21,6 @@ struct ShoppingRootView: View {
         }
     }
 
-    private var currentSpace: Space? { services.activeSpace(selectedID: selection.selectedSpaceID) }
+    /// Reads `spaceKey`, so the body runs again when the selected space's object is replaced (C-02).
+    private var currentSpace: Space? { services.activeSpace(selectedID: selection.spaceKey.id) }
 }

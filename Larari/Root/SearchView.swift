@@ -27,7 +27,7 @@ struct SearchView: View {
                     placement: .navigationBarDrawer(displayMode: .always), prompt: Text("products.search.prompt"))
         .navigationDestination(for: ProductRoute.self) { ProductDetailView(productID: $0.id) }
         .toolbar { toolbar }
-        .task(id: selection.selectedSpaceID) { rebuildModel() }
+        .task(id: selection.spaceKey) { rebuildModel() }
         .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange,
                                                         object: services.context)) { _ in model?.reload() }
         .barcodeFlow(isScanning: $scanning, space: model?.space)

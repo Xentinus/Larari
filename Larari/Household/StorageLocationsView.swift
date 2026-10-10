@@ -30,7 +30,7 @@ struct StorageLocationsView: View {
             }
         }
         .navigationTitle("storageLocations.title")
-        .task(id: selection.selectedSpaceID) { rebuildModel() }
+        .task(id: selection.spaceKey) { rebuildModel() }
         .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange,
                                                         object: services.context)) { _ in
             model?.reload()
