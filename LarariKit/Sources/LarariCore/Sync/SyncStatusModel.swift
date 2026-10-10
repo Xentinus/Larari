@@ -89,6 +89,20 @@ public final class SyncStatusModel {
         }
     }
 
+    /// The device's network path (C-02). Offline, NSPersistentCloudKitContainer reports no failure: it waits for the
+    /// network. So an unreachable path counts as a network problem from the moment it is seen (the row at once, the
+    /// banner after the threshold) until the path is back.
+    public func setNetworkReachable(_ reachable: Bool) {
+        let key = "path|network"
+        if reachable {
+            entries[key] = nil
+        } else if entries[key] == nil {
+            entries[key] = Entry(problem: .network, firstSeen: now(), count: 1)
+            scheduleRecheck()
+        }
+        refresh()
+    }
+
     /// The user exported and/or removed the local copy of a household that is gone.
     public func resolveZoneGone() {
         entries = entries.filter { if case .zoneGone = $0.value.problem { false } else { true } }

@@ -105,6 +105,9 @@ final class AppModel {
         let events = SyncEventSource.events(from: persistence.container)
         Task { [syncStatus] in await syncStatus.consume(events) }
         syncStatus.onNotAuthenticated = { [weak self] in Task { await self?.accountGate.refresh() } }
+        #if CLOUDKIT_ENABLED
+        networkPath.onChange = { [syncStatus] online in syncStatus.setNetworkReachable(online) }
+        #endif
         #if DEBUG
         if UITestHooks.simulatesSyncProblem {
             syncStatus.handle(SyncEventSnapshot(

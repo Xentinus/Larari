@@ -27,6 +27,33 @@ struct SyncStatusModelTests {
                           failure: code.map { SyncFailureInfo(code: $0.rawValue, isCloudKit: true) })
     }
 
+    // C-02 row 6.2: offline, NSPersistentCloudKitContainer reports no failure at all (it waits), so the network path
+    // drives the "Can't reach iCloud" status: the row at once, the banner after the threshold, both clear online.
+    @Test func anUnreachableNetworkShowsTheNetworkProblemAndBecomesABannerAfterTheThreshold() {
+        let model = makeModel()
+        model.setNetworkReachable(false)
+        #expect(model.currentError == .network)
+        #expect(model.bannerProblem == nil)
+
+        clock.date = clock.date.addingTimeInterval(61)
+        model.refresh()
+        #expect(model.bannerProblem == .network)
+
+        model.setNetworkReachable(true)
+        #expect(model.currentError == nil)
+        #expect(model.bannerProblem == nil)
+    }
+
+    @Test func goingOfflineAgainDoesNotRestartTheClock() {
+        let model = makeModel()
+        model.setNetworkReachable(false)
+        clock.date = clock.date.addingTimeInterval(40)
+        model.setNetworkReachable(false)              // a second path update while still offline
+        clock.date = clock.date.addingTimeInterval(25)
+        model.refresh()
+        #expect(model.bannerProblem == .network)
+    }
+
     @Test func tracksInFlightEvents() {
         let model = makeModel()
         let id = UUID()
