@@ -1,3 +1,4 @@
+import CloudKit
 import Combine
 import CoreData
 import LarariCore
@@ -19,7 +20,6 @@ struct HouseholdSpaceSections<TrailingContent: View>: View {
     @State private var confirmDeleteStep2 = false
     @State private var isWorking = false
     @State private var errorMessage: String?
-    @State private var sharingPresentation: SharingPresentation?
     @State private var showsCloudNotice = false
     @State private var editingSelf = false
     @State private var showsFormer = false
@@ -95,7 +95,7 @@ struct HouseholdSpaceSections<TrailingContent: View>: View {
                     run {
                         let share = try await sharing.shareExistingSpace(space)
                         if sharing.isCloudBacked {
-                            sharingPresentation = SharingPresentation(share: share)
+                            openSharing(share, sharing)
                         } else {
                             showsCloudNotice = true
                         }
@@ -121,12 +121,6 @@ struct HouseholdSpaceSections<TrailingContent: View>: View {
             Text("member.section.title")
         }
         .disabled(isWorking)
-        .sheet(item: $sharingPresentation) { presentation in
-            CloudSharingView(share: presentation.share, space: space, sharing: sharing) { message in
-                errorMessage = message
-            }
-            .ignoresSafeArea()
-        }
         .alert(Text("household.sharing.cloudNeeded"), isPresented: $showsCloudNotice) {
             Button("common.ok", role: .cancel) {}
         } message: {
@@ -188,7 +182,13 @@ struct HouseholdSpaceSections<TrailingContent: View>: View {
             return
         }
         guard let share = sharing.share(for: space) else { return }
-        sharingPresentation = SharingPresentation(share: share)
+        openSharing(share, sharing)
+    }
+
+    private func openSharing(_ share: CKShare, _ sharing: SharingService) {
+        CloudSharingPresenter.present(share: share, space: space, sharing: sharing) { message in
+            errorMessage = message
+        }
     }
 
     private func run(_ action: @escaping @MainActor () async throws -> Void) {

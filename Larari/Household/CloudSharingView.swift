@@ -1,34 +1,37 @@
 import CloudKit
 import LarariCore
-import SwiftUI
 import UIKit
 
-struct SharingPresentation: Identifiable {
-    let id = UUID()
-    let share: CKShare
-}
-
 /// The system sharing UI (participants, Add People, permissions; Remove Me for a participant).
-struct CloudSharingView: UIViewControllerRepresentable {
-    let share: CKShare
-    let space: Space
-    let sharing: SharingService
-    let onError: @MainActor (String) -> Void
+///
+/// Presented with UIKit from the top view controller, as Apple's CoreDataCloudKitShare sample and the P0-01 spike do.
+/// Wrapped in a SwiftUI `.sheet` it closed itself at once and took the settings sheet under it along (C-02).
+@MainActor
+enum CloudSharingPresenter {
+    /// The delegate of the controller on screen; `UICloudSharingController.delegate` is weak.
+    private static var current: Coordinator?
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(space: space, title: space.name, zoneID: share.recordID.zoneID,
-                    wasOwner: sharing.role(for: space) == .owner, sharing: sharing, onError: onError)
-    }
-
-    func makeUIViewController(context: Context) -> UICloudSharingController {
+    static func present(share: CKShare, space: Space, sharing: SharingService,
+                        onError: @escaping @MainActor (String) -> Void) {
+        guard let top = topViewController() else { return }
+        let coordinator = Coordinator(space: space, title: space.name, zoneID: share.recordID.zoneID,
+                                      wasOwner: sharing.role(for: space) == .owner, sharing: sharing, onError: onError)
         let controller = UICloudSharingController(share: share, container: CKContainer(identifier: AppModel.containerIdentifier))
         controller.availablePermissions = [.allowPrivate, .allowReadOnly, .allowReadWrite]
-        controller.delegate = context.coordinator
-        controller.modalPresentationStyle = .formSheet
-        return controller
+        controller.delegate = coordinator
+        controller.popoverPresentationController?.sourceView = top.view
+        current = coordinator
+        top.present(controller, animated: true)
     }
 
-    func updateUIViewController(_ controller: UICloudSharingController, context: Context) {}
+    /// The topmost presented controller of the foreground key window, so the controller opens over the settings sheet.
+    private static func topViewController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        var top = scene?.keyWindow?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
+    }
 
     @MainActor
     final class Coordinator: NSObject, UICloudSharingControllerDelegate {
