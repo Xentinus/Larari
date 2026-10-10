@@ -91,6 +91,13 @@ struct RootView: View {
                         evaluateMemberSetup()       // a joined space's share and permissions arrive with the import
                         app.scheduleShareRefresh()  // debounced; the share-state cache follows the import (P5-06)
                     }
+                    .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange,
+                                                                    object: services.context)) { _ in
+                        // The household went away under the sheet (left, removed, deleted by its owner): close it.
+                        if let target = memberSetupSpace, target.space.isDeleted || target.space.managedObjectContext == nil {
+                            memberSetupSpace = nil
+                        }
+                    }
                     .sheet(item: $memberSetupSpace, onDismiss: { app.memberSetupSpaceID = nil }) { target in
                         if let members = services.members {
                             MemberSetupView(service: members, space: target.space, userRecordName: services.userRecordName) {

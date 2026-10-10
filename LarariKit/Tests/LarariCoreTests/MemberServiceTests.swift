@@ -77,6 +77,30 @@ struct MemberServiceTests {
         #expect(MemberService.newMemberName == "New member")
     }
 
+    // C-02 row 3.8: while a joined household is being left (Leave, or Remove Me in the system sharing UI), the share
+    // cache still says "participant" and the own Member record may already be gone; that must not ask for setup.
+    @Test func noSetupWhileLeaving() async throws {
+        let joined = try cloud.simulateJoinedHousehold(named: "Theirs")
+        #expect(service.needsSetup(in: joined))
+        var askedDuringLeave: Bool?
+        cloud.onPurge = { askedDuringLeave = service.needsSetup(in: joined) }
+
+        try await sharing.leave(joined)
+
+        #expect(askedDuringLeave == false)
+    }
+
+    @Test func noSetupWhileRemovedThroughTheSharingUI() async throws {
+        let joined = try cloud.simulateJoinedHousehold(named: "Theirs")
+        let zoneID = try #require(cloud.share(for: joined)).recordID.zoneID
+        var askedDuringLeave: Bool?
+        cloud.onPurge = { askedDuringLeave = service.needsSetup(in: joined) }
+
+        try await sharing.sharingStopped(for: joined, zoneID: zoneID, wasOwner: false)
+
+        #expect(askedDuringLeave == false)
+    }
+
     @Test func needsSetupOnlyForEditableSharedHouseholdsWithoutName() async throws {
         let joined = try cloud.simulateJoinedHousehold(named: "Theirs")
         let readOnly = try cloud.simulateJoinedHousehold(named: "RO", readOnly: true)

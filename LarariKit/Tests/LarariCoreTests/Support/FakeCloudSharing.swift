@@ -22,6 +22,8 @@ final class FakeCloudSharing: CloudSharing {
     var shareError: Error?
     var persistError: Error?
     var purgeError: Error?
+    /// Runs when a purge starts, before anything is deleted (C-02: what the UI sees while a household is being left).
+    var onPurge: (() -> Void)?
     var acceptError: Error?
     /// Simulates the import that follows an accepted invitation.
     var onAccept: ((any ShareInvitation) throws -> Void)?
@@ -81,6 +83,7 @@ final class FakeCloudSharing: CloudSharing {
     }
 
     func purgeObjectsAndRecordsInZone(with zoneID: CKRecordZone.ID, in store: NSPersistentStore) async throws {
+        onPurge?()
         if let purgeError { throw purgeError }
         purgedZones.append((zoneID, store))
         let context = persistence.viewContext

@@ -43,6 +43,9 @@ public final class SharingService {
     private let spaceStore: SpaceStore
     private let cloud: any CloudSharing
     private let isOnline: @MainActor () -> Bool
+    /// Joined households this device is leaving. While the purge runs the share cache still says "participant" and the
+    /// own Member record can already be gone, so member setup must not ask (C-02).
+    private var leaving: Set<UUID> = []
 
     /// - Parameter isOnline: checked before every share call. Offline, NSPCKC's share call blocks for over a minute
     ///   before it answers (C-02), so the service fails at once instead.
@@ -169,7 +172,19 @@ public final class SharingService {
               let share = await cloud.fetchShare(forObjectWith: space.objectID) else {
             throw SharingError.notParticipant
         }
-        try await purge(space, zoneID: share.recordID.zoneID, in: persistence.sharedStore)
+        let id = space.publicId
+        leaving.insert(id)
+        do {
+            try await purge(space, zoneID: share.recordID.zoneID, in: persistence.sharedStore)
+        } catch {
+            leaving.remove(id)
+            throw error
+        }
+    }
+
+    /// True while this device is leaving the household (Leave, or Remove Me in the sharing UI).
+    public func isLeaving(_ space: Space) -> Bool {
+        leaving.contains(space.publicId)
     }
 
     /// Owner: purging the zone in the private store deletes the household for everyone.
@@ -214,10 +229,14 @@ public final class SharingService {
             context.refresh(space, mergeChanges: true)   // data stays; household becomes unshared
             return
         }
+        leaving.insert(space.publicId)
         do {
             try await purge(space, zoneID: zoneID, in: persistence.sharedStore)
         } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
             // The container already removed the zone.
+        } catch {
+            leaving.remove(space.publicId)
+            throw error
         }
     }
 

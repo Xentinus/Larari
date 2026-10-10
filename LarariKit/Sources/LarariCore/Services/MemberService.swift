@@ -80,7 +80,8 @@ public final class MemberService {
     }
 
     public func needsSetup(in space: Space) -> Bool {
-        guard space.kind == .household, sharing.role(for: space) != .notShared, sharing.canEdit(space) else { return false }
+        guard space.kind == .household, !sharing.isLeaving(space), sharing.role(for: space) != .notShared,
+              sharing.canEdit(space) else { return false }
         let name = currentMember(in: space)?.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return name.isEmpty
     }
