@@ -1,5 +1,6 @@
 import CoreData
 import Foundation
+import LarariShared
 import Observation
 
 /// Every domain service, built once by `AppModel` after the account gate and put in the SwiftUI environment
@@ -27,6 +28,8 @@ public final class ServiceContainer {
     public let storeReminders: StoreReminderCoordinator
     /// The shopping Live Activity (N-04); switched off (`NoLiveActivities`) unless the app passes ActivityKit.
     public let shoppingActivity: ShoppingActivityCoordinator
+    /// The widgets' App Group snapshot (N-05). Nil in local mode, under UI tests and in package tests.
+    public let widgetSnapshots: WidgetSnapshotCoordinator?
     /// Export and import. Nil only in package tests that build the container without persistence.
     public let archive: ArchiveServices?
     /// Households: create, share, leave, delete. Nil only in package tests that build the container without it.
@@ -53,7 +56,10 @@ public final class ServiceContainer {
                 storeAddressCacheURL: URL? = nil,
                 storeAddresses: (any StoreAddressResolving)? = nil,
                 liveActivities: (any LiveActivityControlling)? = nil,
-                shoppingActivityDefaults: UserDefaults = .standard) {
+                shoppingActivityDefaults: UserDefaults = .standard,
+                widgetStore: WidgetSnapshotStore? = nil,
+                widgetQueue: WidgetTickQueue? = nil,
+                reloadWidgets: @escaping @MainActor () -> Void = {}) {
         let pending = PendingDeletions()
         pendingDeletions = pending
         // When sharing is given, its permission check is every service's canEdit (read-only households).
@@ -103,6 +109,14 @@ public final class ServiceContainer {
             controller: liveActivities ?? NoLiveActivities(),
             memory: ShoppingActivityMemory(defaults: shoppingActivityDefaults),
             locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"))
+        if let widgetStore, let widgetQueue {
+            widgetSnapshots = WidgetSnapshotCoordinator(
+                context: context, spaceStore: spaceStore, shopping: shoppingService, inventory: inventoryService,
+                pending: pending, store: widgetStore, queue: widgetQueue, reload: reloadWidgets,
+                locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"))
+        } else {
+            widgetSnapshots = nil
+        }
         archive = persistence.map { ArchiveServices(persistence: $0, spaceStore: spaceStore, userRecordName: userRecordName,
                                                           canEdit: permission) }
         shoppingLocations.onUpsert = { [storeDirectory] in storeDirectory.remember($0) }
