@@ -3,8 +3,8 @@ import LarariShared
 import SwiftUI
 import WidgetKit
 
-/// The shopping Live Activity (N-04): Lock Screen banner and Dynamic Island (D1 A, D2 A/A/A). The app starts,
-/// updates and ends it; a tap opens the household's Shopping tab grouped by store.
+/// The shopping Live Activity (N-04): Lock Screen banner and Dynamic Island (D1 A, D2 A/A/A; counts only since N-05).
+/// The app starts, updates and ends it; a tap opens the household's Shopping tab grouped by store.
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
@@ -19,7 +19,7 @@ struct ShoppingLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if !context.state.isFinished {                       // the bottom row says "All done"
-                        ActivityRemaining(state: context.state)
+                        ActivityBigCount(state: context.state)
                             .padding(.trailing, 4)
                     }
                 }
@@ -28,7 +28,8 @@ struct ShoppingLiveActivity: Widget {
                         Label("activity.done", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(WidgetPalette.mocha)
                     } else {
-                        ActivityItemList(state: context.state, limit: 2)
+                        ActivityProgressBar(state: context.state)
+                            .padding(.horizontal, 4)
                     }
                 }
             } compactLeading: {

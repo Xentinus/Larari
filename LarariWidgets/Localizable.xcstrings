@@ -93,29 +93,6 @@
         }
       }
     },
-    "activity.more %lld" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+%lld more"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+%lld további"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+%lld weitere"
-          }
-        }
-      }
-    },
     "activity.progress %lld %lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -208,25 +185,25 @@
         }
       }
     },
-    "activity.tick.accessibility %@" : {
+    "activity.toBuyHere" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mark %@ as bought"
+            "value" : "to buy here"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ megvéve"
+            "value" : "vehető itt"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ als gekauft markieren"
+            "value" : "hier zu kaufen"
           }
         }
       }

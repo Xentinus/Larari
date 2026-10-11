@@ -1,21 +1,21 @@
-import AppIntents
 import LarariShared
 import SwiftUI
 import WidgetKit
 
-/// Lock Screen banner (D1 A): store and household, "5 left", a thin progress bar, the next rows with tick buttons
-/// and quantities (D8 A).
+/// Lock Screen banner (D1, reworked in N-05): store and household on the left, how many items are left to buy here
+/// on the right, a thin progress bar with "2 of 7 done" below. No item rows: the banner has to fit the system's
+/// 160 pt limit at every text size, and ticking happens in the app (the tap opens it).
 struct ShoppingLockScreenView: View {
     let state: ShoppingActivityContent
     let isStale: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .center, spacing: 12) {
                 ActivityTitle(state: state)
                 Spacer(minLength: 8)
                 if !state.isFinished {                                   // the "All done" row says it below
-                    ActivityRemaining(state: state)
+                    ActivityBigCount(state: state)
                 }
             }
             if state.isFinished {
@@ -23,8 +23,14 @@ struct ShoppingLockScreenView: View {
                     .font(.headline)
                     .foregroundStyle(WidgetPalette.mocha)
             } else {
-                ActivityProgressBar(state: state)
-                ActivityItemList(state: state, limit: ShoppingActivityContent.maxNextItems)
+                VStack(alignment: .leading, spacing: 6) {
+                    ActivityProgressBar(state: state)
+                    Text("activity.progress \(state.doneCount) \(state.totalCount)")
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)                       // the bar says it
+                }
             }
             if isStale {
                 Text("activity.stale")
@@ -32,7 +38,8 @@ struct ShoppingLockScreenView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(16)
+        .padding(14)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 }
 
@@ -60,17 +67,25 @@ struct ActivityTitle: View {
     }
 }
 
-struct ActivityRemaining: View {
+/// The number of items left to buy here, large, with "to buy here" below (N-05 Live Activity rework, option A).
+struct ActivityBigCount: View {
     let state: ShoppingActivityContent
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Text("activity.remaining \(state.remainingCount)")
-            .font(.subheadline.weight(.semibold))
-            .monospacedDigit()
-            .contentTransition(reduceMotion ? .identity : .numericText())
-            .foregroundStyle(WidgetPalette.mocha)
-            .fixedSize()                                                 // a long title truncates, not the count
+        VStack(alignment: .trailing, spacing: 2) {
+            Text(verbatim: "\(state.remainingCount)")
+                .font(.largeTitle.bold())
+                .monospacedDigit()
+                .contentTransition(reduceMotion ? .identity : .numericText())
+                .foregroundStyle(WidgetPalette.mocha)
+            Text("activity.toBuyHere")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .fixedSize()                                                     // a long title truncates, not the count
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("activity.remaining \(state.remainingCount)"))
     }
 }
 
@@ -102,60 +117,5 @@ struct ActivityProgressBar: View {
         ProgressView(value: Double(state.doneCount), total: Double(max(state.totalCount, 1)))
             .tint(WidgetPalette.mocha)
             .accessibilityLabel(Text("activity.progress \(state.doneCount) \(state.totalCount)"))
-    }
-}
-
-struct ActivityItemList: View {
-    let state: ShoppingActivityContent
-    let limit: Int
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(state.nextItems.prefix(limit)) { item in
-                ActivityItemRow(item: item, canTick: state.canTick)
-            }
-            let more = state.remainingCount - min(limit, state.nextItems.count)
-            if more > 0 {
-                Text("activity.more \(more)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-/// One row (D1 A, D8 A): a circle tick button (not in read-only households), the name, the quantity on the right.
-/// The name truncates before the quantity. The button runs in the app process.
-struct ActivityItemRow: View {
-    let item: ShoppingActivityItem
-    let canTick: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            if canTick {
-                Button(intent: TickShoppingItemIntent(itemIDs: item.itemIDs)) {
-                    Image(systemName: "circle")
-                        .font(.title3)
-                        .foregroundStyle(WidgetPalette.mocha)
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("activity.tick.accessibility \(item.name)"))
-            }
-            HStack(spacing: 8) {
-                Text(verbatim: item.name)
-                    .font(.body)
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                Text(verbatim: item.quantity)
-                    .font(.subheadline)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .layoutPriority(1)
-            }
-            .accessibilityElement(children: .combine)
-        }
     }
 }
