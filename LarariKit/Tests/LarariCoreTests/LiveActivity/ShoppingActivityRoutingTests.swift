@@ -15,6 +15,15 @@ struct ShoppingActivityRoutingTests {
                 == .shoppingByStore(spaceID: space))
     }
 
+    @Test func widgetLinksMapOntoDestinations() {
+        let space = UUID()
+        let list = UUID()
+        #expect(AppDestination(LarariDeepLink.inventoryExpiring(spaceID: space)) == .inventoryExpiring(spaceID: space))
+        #expect(AppDestination(LarariDeepLink.inventoryExpiring(spaceID: nil)) == .inventoryExpiring(spaceID: nil))
+        #expect(AppDestination(LarariDeepLink.shoppingList(spaceID: space, listID: list))
+                == .shoppingList(spaceID: space, listID: list))
+    }
+
     @Test func aDeletedSpaceFallsBackToTheCurrentShoppingHome() throws {
         let env = try ServiceTestEnvironment()
         let services = ServiceContainer(spaceStore: env.spaceStore, context: env.context,

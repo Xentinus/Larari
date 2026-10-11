@@ -71,6 +71,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				TickShoppingItemIntent.swift,
+				TickWidgetShoppingItemIntent.swift,
 			);
 			target = 000000000000000100000000 /* Larari */;
 		};

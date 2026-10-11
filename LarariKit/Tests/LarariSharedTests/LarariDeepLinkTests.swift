@@ -20,12 +20,31 @@ struct LarariDeepLinkTests {
         #expect(LarariDeepLink.inventory(spaceID: nil).url.absoluteString == "larari://inventory")
     }
 
+    @Test func buildsWidgetURLs() {
+        #expect(LarariDeepLink.inventoryExpiring(spaceID: space).url.absoluteString
+                == "larari://inventory?space=11111111-1111-1111-1111-111111111111&group=expiry")
+        #expect(LarariDeepLink.inventoryExpiring(spaceID: nil).url.absoluteString == "larari://inventory?group=expiry")
+        #expect(LarariDeepLink.shoppingList(spaceID: space, listID: store).url.absoluteString
+                == "larari://shopping?space=11111111-1111-1111-1111-111111111111&list=22222222-2222-2222-2222-222222222222")
+    }
+
+    @Test func parsesWidgetLinks() {
+        #expect(LarariDeepLink(url: URL(string: "larari://inventory?group=expiry")!) == .inventoryExpiring(spaceID: nil))
+        #expect(LarariDeepLink(url: URL(string: "larari://inventory?space=11111111-1111-1111-1111-111111111111&group=other")!)
+                == .inventory(spaceID: space))
+        // `list` wins over a store scope.
+        #expect(LarariDeepLink(url: URL(string: "larari://shopping?space=11111111-1111-1111-1111-111111111111&list=22222222-2222-2222-2222-222222222222&store=33333333-3333-3333-3333-333333333333")!)
+                == .shoppingList(spaceID: space, listID: store))
+    }
+
     @Test func parsesWhatItBuilds() {
         let links: [LarariDeepLink] = [.shoppingStore(spaceID: space, scope: .store(store)),
                                         .shoppingStore(spaceID: space, scope: .stores([store, other])),
                                         .shoppingStore(spaceID: space, scope: .chain("spar")),
                                         .shoppingStore(spaceID: space, scope: .chain("tesco expressz")),
-                                        .inventory(spaceID: space), .inventory(spaceID: nil)]
+                                        .inventory(spaceID: space), .inventory(spaceID: nil),
+                                        .inventoryExpiring(spaceID: space), .inventoryExpiring(spaceID: nil),
+                                        .shoppingList(spaceID: space, listID: store)]
         for link in links {
             #expect(LarariDeepLink(url: link.url) == link)
         }
@@ -38,6 +57,8 @@ struct LarariDeepLinkTests {
         #expect(LarariDeepLink(url: URL(string: "larari://shopping?space=11111111-1111-1111-1111-111111111111&chain=")!) == nil)
         #expect(LarariDeepLink(url: URL(string: "larari://shopping?space=11111111-1111-1111-1111-111111111111&stores=nope")!) == nil)
         #expect(LarariDeepLink(url: URL(string: "larari://shopping?space=11111111-1111-1111-1111-111111111111&stores=22222222-2222-2222-2222-222222222222,x")!) == nil)
+        #expect(LarariDeepLink(url: URL(string: "larari://shopping?space=11111111-1111-1111-1111-111111111111&list=nope")!) == nil)
+        #expect(LarariDeepLink(url: URL(string: "larari://shopping?list=22222222-2222-2222-2222-222222222222")!) == nil)
         #expect(LarariDeepLink(url: URL(string: "larari://settings")!) == nil)
         #expect(LarariDeepLink(url: URL(fileURLWithPath: "/tmp/Heti.larari")) == nil)   // archives go to the import router
     }

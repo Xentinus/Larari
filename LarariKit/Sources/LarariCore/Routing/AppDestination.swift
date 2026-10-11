@@ -26,6 +26,8 @@ extension AppDestination {
     public init(_ link: LarariDeepLink) {
         switch link {
         case let .inventory(spaceID): self = .inventory(spaceID: spaceID)
+        case let .inventoryExpiring(spaceID): self = .inventoryExpiring(spaceID: spaceID)
+        case let .shoppingList(spaceID, listID): self = .shoppingList(spaceID: spaceID, listID: listID)
         case let .shoppingStore(spaceID, _): self = .shoppingByStore(spaceID: spaceID)
         }
     }

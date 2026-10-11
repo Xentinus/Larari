@@ -4,10 +4,15 @@ import Foundation
 /// `AppDestination`; any other URL (an archive) goes to the import router as before.
 public enum LarariDeepLink: Equatable, Sendable {
     case inventory(spaceID: UUID?)
+    /// The Inventory tab grouped by expiry, like the expiry notifications (the Expiring soon widget, N-05).
+    case inventoryExpiring(spaceID: UUID?)
+    /// The Shopping home filtered to one list (the Shopping list widget, N-05).
+    case shoppingList(spaceID: UUID, listID: UUID)
     /// The Shopping tab of a household, grouped by store (the Live Activity's store or chain).
     case shoppingStore(spaceID: UUID, scope: ShoppingActivityScope)
 
     public static let scheme = "larari"
+    private static let expiryGroup = "expiry"
 
     public var url: URL {
         var components = URLComponents()
@@ -16,6 +21,14 @@ public enum LarariDeepLink: Equatable, Sendable {
         case let .inventory(spaceID):
             components.host = "inventory"
             components.queryItems = spaceID.map { [URLQueryItem(name: "space", value: $0.uuidString)] }
+        case let .inventoryExpiring(spaceID):
+            components.host = "inventory"
+            components.queryItems = (spaceID.map { [URLQueryItem(name: "space", value: $0.uuidString)] } ?? [])
+                + [URLQueryItem(name: "group", value: Self.expiryGroup)]
+        case let .shoppingList(spaceID, listID):
+            components.host = "shopping"
+            components.queryItems = [URLQueryItem(name: "space", value: spaceID.uuidString),
+                                     URLQueryItem(name: "list", value: listID.uuidString)]
         case let .shoppingStore(spaceID, scope):
             components.host = "shopping"
             var items = [URLQueryItem(name: "space", value: spaceID.uuidString)]
@@ -38,10 +51,14 @@ public enum LarariDeepLink: Equatable, Sendable {
         }
         switch components.host?.lowercased() {
         case "inventory":
-            self = .inventory(spaceID: value("space").flatMap(UUID.init(uuidString:)))
+            let space = value("space").flatMap(UUID.init(uuidString:))
+            self = value("group") == Self.expiryGroup ? .inventoryExpiring(spaceID: space) : .inventory(spaceID: space)
         case "shopping":
             guard let space = value("space").flatMap(UUID.init(uuidString:)) else { return nil }
-            if let store = value("store").flatMap(UUID.init(uuidString:)) {
+            if let list = value("list") {
+                guard let id = UUID(uuidString: list) else { return nil }
+                self = .shoppingList(spaceID: space, listID: id)
+            } else if let store = value("store").flatMap(UUID.init(uuidString:)) {
                 self = .shoppingStore(spaceID: space, scope: .store(store))
             } else if let list = value("stores") {
                 let ids = list.split(separator: ",").map { UUID(uuidString: String($0)) }
