@@ -25,7 +25,7 @@ struct ShoppingHomeView: View {
     @State private var managing = false
     @State private var pendingListDelete: ShoppingListsModel.Summary?
     @Environment(WindowRouter.self) private var router
-    @State private var listWidth: CGFloat = 0
+    @State private var listFrame = ListFrame()
     @Environment(StoreDirectory.self) private var directory
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -193,7 +193,8 @@ struct ShoppingHomeView: View {
             // Built once per render: `model.sections` regroups every row, and the headers and the index share it.
             let sections = model.sections
             let showsIndex = model.hasLetterIndex(in: sections) && !dynamicTypeSize.isAccessibilitySize
-            let trailingInset = showsIndex ? max(columnInset, 28) : columnInset      // the index needs 28 pt
+            let trailingInset = showsIndex ? max(trailingColumnInset, 28) : trailingColumnInset   // the index needs 28 pt
+            let headerTrailing = showsIndex ? max(columnSide, 28) : columnSide
             ScrollViewReader { proxy in
                 List {
                     ForEach(sections) { section in
@@ -205,15 +206,18 @@ struct ShoppingHomeView: View {
                                     }
                                 } : nil)
                         } header: {
-                            if showsHeader(section) { header(section, trailingInset: trailingInset) }
+                            if showsHeader(section) { header(section, trailingInset: headerTrailing) }
                         }
                     }
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Color(uiColor: .systemGroupedBackground))
-                .onGeometryChange(for: CGFloat.self) { $0.size.width + $0.safeAreaInsets.leading + $0.safeAreaInsets.trailing } action: { listWidth = $0 }
-                .contentMargins(.leading, columnInset, for: .scrollContent)
+                .onGeometryChange(for: ListFrame.self) {
+                    ListFrame(width: $0.size.width, leading: $0.safeAreaInsets.leading,
+                              trailing: $0.safeAreaInsets.trailing)
+                } action: { listFrame = $0 }
+                .contentMargins(.leading, leadingColumnInset, for: .scrollContent)
                 .contentMargins(.trailing, trailingInset, for: .scrollContent)
                 .overlay {
                     if sections.isEmpty { emptyItems }
@@ -255,9 +259,21 @@ struct ShoppingHomeView: View {
         }
     }
 
-    /// The space left and right of the card column: 16 pt, or more once the screen is wider than the column. The
-    /// scroll content margins count from the screen edge, so the width includes the safe area.
-    private var columnInset: CGFloat { max(16, (listWidth - CardColumn.maxWidth) / 2) }
+    /// The list's width inside its safe area and the safe area on each side. On iPad the sidebar floats over the
+    /// content and counts as leading safe area, so the two sides differ.
+    nonisolated struct ListFrame: Equatable, Sendable {
+        var width: CGFloat = 0
+        var leading: CGFloat = 0
+        var trailing: CGFloat = 0
+    }
+
+    /// The space beside the card column inside the safe area: 16 pt, or more once the visible area is wider than the
+    /// column, so the column is centred where it can be seen (not under the iPad sidebar).
+    private var columnSide: CGFloat { max(16, (listFrame.width - CardColumn.maxWidth) / 2) }
+
+    /// The scroll content margins count from the list's edge, so each side adds its safe area.
+    private var leadingColumnInset: CGFloat { listFrame.leading + columnSide }
+    private var trailingColumnInset: CGFloat { listFrame.trailing + columnSide }
 
     private func showsHeader(_ section: ShoppingOverviewModel.Section) -> Bool {
         if case .list = section.kind { return model.showsListHeaders }
@@ -285,7 +301,7 @@ struct ShoppingHomeView: View {
         .font(.headline)
         .foregroundStyle(.primary)          // a plain-list header would otherwise dim the title and the count
         .padding(.top, 8)
-        .padding(.leading, columnInset)
+        .padding(.leading, columnSide)                // a header row already starts inside the safe area
         .padding(.trailing, trailingInset)
         .listRowInsets(EdgeInsets())
         .textCase(nil)
