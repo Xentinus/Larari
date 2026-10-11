@@ -93,6 +93,21 @@ public enum WidgetTimelinePlanner {
         return seven > now ? seven : (calendar.date(byAdding: .day, value: 1, to: seven) ?? now)
     }
 
+    /// Without a snapshot (before the first unlock after a restart the App Group file cannot be read, or the app has
+    /// not written it yet) the widgets look again this soon, so "Open Larari once" does not stick until 07:00.
+    public static let missingSnapshotRetry: TimeInterval = 15 * 60
+
+    /// The Expiring soon widget's reload: 07:00 with a snapshot, else `missingSnapshotRetry` from now.
+    public static func expiringReload(hasSnapshot: Bool, after now: Date, calendar: Calendar) -> Date {
+        hasSnapshot ? nextReload(after: now, calendar: calendar) : now.addingTimeInterval(missingSnapshotRetry)
+    }
+
+    /// The Shopping list widget's reload: nil (never; the app reloads it after every change) with a snapshot, else
+    /// `missingSnapshotRetry` from now.
+    public static func listReload(hasSnapshot: Bool, after now: Date) -> Date? {
+        hasSnapshot ? nil : now.addingTimeInterval(missingSnapshotRetry)
+    }
+
     /// The configured list; without one (or when it was deleted) the first list that has items, else the first.
     public static func list(in snapshot: WidgetSnapshot?, id: UUID?) -> ShoppingListSnapshot? {
         guard let lists = snapshot?.lists else { return nil }

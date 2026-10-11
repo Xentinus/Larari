@@ -51,6 +51,19 @@ struct WidgetSnapshotBuilderTests {
         #expect(snapshot.generatedAt == stack.now.date)
     }
 
+    @Test func everyNotExpiredItemStaysAndExpiredOnesFillTheRestMostRecentFirst() throws {
+        for index in 0..<45 { try stock("Régi \(index)", expiresIn: -10 - Double(index)) }    // long expired
+        for days in [2.0, 5, 9] { try stock("Hamar \(Int(days))", expiresIn: days) }
+
+        let expiring = try build().expiring
+
+        #expect(expiring.count == WidgetSnapshotBuilder.maxExpiring)
+        #expect(Set(expiring.map(\.name)).isSuperset(of: ["Hamar 2", "Hamar 5", "Hamar 9"]))
+        let keptExpired = Set(expiring.map(\.name).filter { $0.hasPrefix("Régi") })
+        #expect(keptExpired == Set((0..<37).map { "Régi \($0)" }))                 // the 37 most recently expired
+        #expect(expiring.map(\.expiresAt) == expiring.map(\.expiresAt).sorted())   // still earliest first
+    }
+
     @Test func pendingDeletionsAreLeftOut() throws {
         let milk = try stock("Tej", expiresIn: 2)
         stack.pending.hide(milk.publicId)

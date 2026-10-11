@@ -18,9 +18,13 @@ nonisolated struct ShoppingListProvider: AppIntentTimelineProvider {
         entry(for: configuration)
     }
 
-    /// One entry; the app reloads the widget after every change, so the policy is `.never`.
+    /// One entry; the app reloads the widget after every change, so the policy is `.never`. Without a snapshot to read
+    /// (before the first unlock after a restart, or before the app wrote one) it looks again in 15 minutes.
     func timeline(for configuration: SelectShoppingListIntent, in context: Context) async -> Timeline<ShoppingListWidgetEntry> {
-        Timeline(entries: [entry(for: configuration)], policy: .never)
+        let entry = entry(for: configuration)
+        let policy: TimelineReloadPolicy = WidgetTimelinePlanner.listReload(hasSnapshot: entry.hasSnapshot, after: entry.date)
+            .map { .after($0) } ?? .never
+        return Timeline(entries: [entry], policy: policy)
     }
 
     private func entry(for configuration: SelectShoppingListIntent) -> ShoppingListWidgetEntry {

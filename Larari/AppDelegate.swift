@@ -10,7 +10,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().setNotificationCategories(NotificationActions.categories())   // N-02
         BackgroundRefresh.register()            // before launch finishes, or iOS drops the background launch
         BackgroundRefresh.submit()
-        // Runs on every launch, including the background launch for a Live Activity tick (N-04).
+        // Runs on every launch, including the background launch for a Live Activity tick (N-04). The handler reports
+        // whether the app took the tick, so the widget's tick falls back to its queue when it did not (N-05).
         ShoppingTickBridge.register { itemIDs in await AppModel.shared.tick(itemIDs: itemIDs) }
         return true
     }

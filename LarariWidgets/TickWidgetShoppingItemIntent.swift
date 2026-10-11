@@ -30,7 +30,8 @@ struct TickWidgetShoppingItemIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         guard let item = UUID(uuidString: itemID), let list = UUID(uuidString: listID) else { return .result() }
-        if await ShoppingTickBridge.tick([item]) { return .result() }          // app process
+        // App process: the app took the tick. False there (no services yet) falls through to the queue like iOS 26.
+        if await ShoppingTickBridge.tick([item]) { return .result() }
         guard let store = WidgetSnapshotStore.appGroup(), let queue = WidgetTickQueue.appGroup() else { return .result() }
         try queue.append(QueuedTick(itemID: item, listID: list, queuedAt: .now))
         // The queue is the source of truth; a snapshot that could not be marked only shows the row until the app runs.

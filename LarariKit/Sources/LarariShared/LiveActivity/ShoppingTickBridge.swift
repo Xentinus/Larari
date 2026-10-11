@@ -5,7 +5,9 @@ import Foundation
 /// background for a `LiveActivityIntent`. The widget extension never registers one, so there `tick` returns false.
 @MainActor
 public enum ShoppingTickBridge {
-    public typealias Handler = @MainActor ([UUID]) async -> Void
+    /// Returns whether the app took the tick (false: it has no services, e.g. the account is unavailable), so the
+    /// widget's intent can fall back to its queue instead of losing the tick.
+    public typealias Handler = @MainActor ([UUID]) async -> Bool
 
     private static var handler: Handler?
 
@@ -19,10 +21,10 @@ public enum ShoppingTickBridge {
         handler = nil
     }
 
+    /// False without a handler or when the handler could not take the tick.
     @discardableResult
     public static func tick(_ itemIDs: [UUID]) async -> Bool {
         guard let handler else { return false }
-        await handler(itemIDs)
-        return true
+        return await handler(itemIDs)
     }
 }

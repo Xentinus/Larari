@@ -27,16 +27,24 @@ public enum WidgetSnapshotBuilder {
             InventoryItem.self,
             where: NSPredicate(format: "isFullyConsumed == NO AND expiresAt != nil AND expiresAt < %@", limit as NSDate),
             sortedBy: [NSSortDescriptor(key: "expiresAt", ascending: true), NSSortDescriptor(key: "publicId", ascending: true)])
-        return items
-            .compactMap { item in
-                // A product in its undo window hides its stock too (the app's `InventoryModel.sections` does the same).
-                guard !pending.contains(item.publicId), let expiresAt = item.expiresAt, let product = item.product,
-                      !product.isGone, !pending.contains(product.publicId) else { return nil }
-                return ExpiringItemSnapshot(id: item.publicId, name: product.name, spaceID: product.space?.publicId,
-                                            spaceName: product.space?.name ?? "", expiresAt: expiresAt)
-            }
-            .prefix(maxExpiring)
-            .map { $0 }
+        let snapshots = items.compactMap { item -> ExpiringItemSnapshot? in
+            // A product in its undo window hides its stock too (the app's `InventoryModel.sections` does the same).
+            guard !pending.contains(item.publicId), let expiresAt = item.expiresAt, let product = item.product,
+                  !product.isGone, !pending.contains(product.publicId) else { return nil }
+            return ExpiringItemSnapshot(id: item.publicId, name: product.name, spaceID: product.space?.publicId,
+                                        spaceName: product.space?.name ?? "", expiresAt: expiresAt)
+        }
+        return capped(snapshots, today: calendar.startOfDay(for: now))
+    }
+
+    /// At most `maxExpiring` items, earliest first (R14 m1): every item that has not expired (the soon window and the
+    /// look-ahead, soonest first) is kept, and the remaining places go to expired items, most recently expired first,
+    /// so long-expired stock never pushes the soon items out.
+    private static func capped(_ items: [ExpiringItemSnapshot], today: Date) -> [ExpiringItemSnapshot] {
+        guard items.count > maxExpiring else { return items }
+        let current = items.filter { $0.expiresAt >= today }.prefix(maxExpiring)
+        let expired = items.filter { $0.expiresAt < today }.suffix(maxExpiring - current.count)
+        return Array(expired) + Array(current)
     }
 
     private static func lists(spaceStore: SpaceStore, shopping: ShoppingService, pending: PendingDeletions,

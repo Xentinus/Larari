@@ -30,4 +30,13 @@ public enum ShoppingActivityActions {
         }
         return bought
     }
+
+    /// Whether any of the items lives in `store` (R14 I2): the app passes the shared store, whose joined households
+    /// can only be bought into once the share-permission cache is filled. Unknown ids involve nothing.
+    public static func involvesStore(_ store: NSPersistentStore, itemIDs: [UUID], context: NSManagedObjectContext) -> Bool {
+        guard !itemIDs.isEmpty, let items = try? context.fetchEntities(
+            ShoppingListItem.self, where: NSPredicate(format: "publicId IN %@", itemIDs.map { $0 as NSUUID }))
+        else { return false }
+        return items.contains { $0.objectID.persistentStore === store }
+    }
 }

@@ -77,6 +77,15 @@ struct WidgetTimelinePlannerTests {
         #expect(WidgetTimelinePlanner.nextReload(after: date(1, 22), calendar: calendar) == date(2, 7))
     }
 
+    @Test func withoutASnapshotBothWidgetsRetryInFifteenMinutes() {
+        let now = date(1, 22)
+        #expect(WidgetTimelinePlanner.expiringReload(hasSnapshot: true, after: now, calendar: calendar) == date(2, 7))
+        #expect(WidgetTimelinePlanner.expiringReload(hasSnapshot: false, after: now, calendar: calendar)
+                    == now.addingTimeInterval(15 * 60))
+        #expect(WidgetTimelinePlanner.listReload(hasSnapshot: true, after: now) == nil)            // the app reloads it
+        #expect(WidgetTimelinePlanner.listReload(hasSnapshot: false, after: now) == now.addingTimeInterval(15 * 60))
+    }
+
     @Test func theChosenListOrTheFirstWithItems() {
         func list(_ name: String, remaining: Int) -> ShoppingListSnapshot {
             ShoppingListSnapshot(id: UUID(), spaceID: spaceA, spaceName: "Otthon", name: name, colorHex: nil,

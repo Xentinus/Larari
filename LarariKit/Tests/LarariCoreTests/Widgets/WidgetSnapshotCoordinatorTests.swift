@@ -17,14 +17,17 @@ struct WidgetSnapshotCoordinatorTests {
     var queue: WidgetTickQueue { WidgetTickQueue(directory: directory) }
     init() throws { stack = try ShoppingTestStack() }
 
-    func coordinator(observesSaves: Bool = false, shopping: ShoppingService? = nil) -> WidgetSnapshotCoordinator {
+    func coordinator(observesSaves: Bool = false, shopping: ShoppingService? = nil,
+                     activated: Bool = true) -> WidgetSnapshotCoordinator {
         let clock = stack.now, counter = reloads
-        return WidgetSnapshotCoordinator(context: stack.context, spaceStore: stack.spaceStore,
+        let coordinator = WidgetSnapshotCoordinator(context: stack.context, spaceStore: stack.spaceStore,
                                          shopping: shopping ?? stack.service,
                                          inventory: stack.inventory, pending: stack.pending, store: store, queue: queue,
                                          reload: { counter.count += 1 }, now: { clock.date }, calendar: .current,
                                          locale: Locale(identifier: "en_US"), debounce: .zero,
                                          observesSaves: observesSaves)
+        if activated { coordinator.activate() }
+        return coordinator
     }
 
     var readOnlyShopping: ShoppingService {
@@ -130,5 +133,103 @@ struct WidgetSnapshotCoordinatorTests {
 
         #expect(queue.pending() == [fresh])
         #expect(try stack.service.unpurchasedItems(in: list).count == 2)
+    }
+
+    // MARK: Activation gate (R14 I1)
+
+    @Test func beforeActivationNothingIsWrittenReloadedOrDrained() async throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let milk = try stack.service.addItem(to: list, customName: "Tej")
+        try queue.append(QueuedTick(itemID: milk.publicId, listID: list.publicId, queuedAt: stack.now.date))
+        let coordinator = coordinator(activated: false)
+
+        coordinator.refresh()
+        coordinator.scheduleRefresh()
+        await coordinator.pendingRefresh?.value
+        #expect(coordinator.drainTicks() == 0)
+
+        #expect(!coordinator.isActive)
+        #expect(store.read() == nil)
+        #expect(reloads.count == 0)
+        #expect(queue.pending().count == 1)                                     // kept for the drain after activation
+        #expect(try stack.service.unpurchasedItems(in: list).count == 1)
+
+        coordinator.activate()
+        #expect(coordinator.drainTicks() == 1)
+        #expect(store.read()?.lists.first?.remainingCount == 0)
+        #expect(reloads.count == 1)
+    }
+
+    @Test func aSaveBeforeActivationWritesNothing() async throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let coordinator = coordinator(observesSaves: true, activated: false)
+
+        try stack.service.addItem(to: list, customName: "Tej")
+        await coordinator.pendingRefresh?.value
+
+        #expect(store.read() == nil)
+        #expect(reloads.count == 0)
+    }
+
+    // MARK: App-process ticks (R14 I2)
+
+    @Test func anAppTickAfterActivationRewritesTheSnapshot() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let milk = try stack.service.addItem(to: list, customName: "Tej").publicId    // a bought item leaves the list
+        try stack.service.addItem(to: list, customName: "Kenyér")
+        let coordinator = coordinator()
+        coordinator.refresh()
+        _ = try ShoppingActivityActions.purchase(itemIDs: [milk], shopping: stack.service,
+                                                 inventory: stack.inventory, pending: stack.pending)
+
+        coordinator.recordAppTick(itemIDs: [milk], requeueOpenItems: false)
+
+        #expect(store.read()?.lists.first?.items.map(\.name) == ["Kenyér"])
+        #expect(queue.pending().isEmpty)
+        #expect(reloads.count == 2)
+    }
+
+    @Test func anAppTickBeforeActivationOnlyRemovesTheBoughtRows() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let milk = try stack.service.addItem(to: list, customName: "Tej").publicId
+        let bread = try stack.service.addItem(to: list, customName: "Kenyér").publicId
+        coordinator().refresh()                                     // the previous run's snapshot
+        let written = try #require(store.read())
+        let coordinator = coordinator(activated: false)
+        _ = try ShoppingActivityActions.purchase(itemIDs: [milk], shopping: stack.service,
+                                                 inventory: stack.inventory, pending: stack.pending)
+
+        coordinator.recordAppTick(itemIDs: [milk, bread], requeueOpenItems: false)
+
+        let snapshotList = try #require(store.read()?.lists.first)
+        #expect(snapshotList.items.map(\.name) == ["Kenyér"])       // bread failed and was not queued: it stays
+        #expect(snapshotList.remainingCount == 1)
+        #expect(store.read()?.lists.first?.canEdit == written.lists.first?.canEdit)   // not rebuilt
+        #expect(queue.pending().isEmpty)
+        #expect(reloads.count == 2)
+    }
+
+    @Test func aTickWhoseWaitRanOutQueuesTheItemsStillOpen() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let milk = try stack.service.addItem(to: list, customName: "Tej").publicId
+        let bread = try stack.service.addItem(to: list, customName: "Kenyér").publicId
+        coordinator().refresh()
+        let coordinator = coordinator(activated: false)
+        _ = try ShoppingActivityActions.purchase(itemIDs: [bread], shopping: stack.service,
+                                                 inventory: stack.inventory, pending: stack.pending)
+        // milk's purchase failed closed (the permission cache was still empty)
+
+        coordinator.recordAppTick(itemIDs: [milk, bread, UUID()], requeueOpenItems: true)
+
+        #expect(queue.pending() == [QueuedTick(itemID: milk, listID: list.publicId, queuedAt: stack.now.date)])
+        #expect(store.read()?.lists.first?.items.isEmpty == true)
+        coordinator.activate()
+        #expect(coordinator.drainTicks() == 1)
+        #expect(try stack.service.unpurchasedItems(in: list).isEmpty)
     }
 }

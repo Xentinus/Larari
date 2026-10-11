@@ -67,4 +67,23 @@ struct ShoppingActivityActionsTests {
         #expect(throws: ServiceError.readOnlySpace) { _ = try buy([item.publicId], shopping: readOnly) }
         #expect(try stack.count(ShoppingListItem.self) == 1)
     }
+    @Test func onlyItemsInTheGivenStoreInvolveIt() throws {
+        let joined = Space(context: stack.context)
+        stack.context.assign(joined, to: stack.persistence.sharedStore)
+        joined.publicId = UUID()
+        joined.name = "Közös"
+        joined.kind = .household
+        joined.stamp(by: stack.user)
+        try stack.context.save()
+        let personal = try stack.service.addItem(to: try stack.service.createList(name: "Heti", in: stack.space),
+                                                 customName: "Tej")
+        let shared = try stack.service.addItem(to: try stack.service.createList(name: "Közös", in: joined),
+                                               customName: "Kenyér")
+        let sharedStore = stack.persistence.sharedStore
+
+        #expect(!ShoppingActivityActions.involvesStore(sharedStore, itemIDs: [personal.publicId, UUID()],
+                                                       context: stack.context))
+        #expect(ShoppingActivityActions.involvesStore(sharedStore, itemIDs: [personal.publicId, shared.publicId],
+                                                      context: stack.context))
+    }
 }

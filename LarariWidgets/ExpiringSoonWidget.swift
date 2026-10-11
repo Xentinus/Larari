@@ -7,7 +7,8 @@ nonisolated struct ExpiringWidgetEntry: TimelineEntry, Sendable {
     let content: ExpiringTimelineContent
 }
 
-/// Today's rows now, then one entry per midnight of the look-ahead; WidgetKit reloads at 07:00 (N-05).
+/// Today's rows now, then one entry per midnight of the look-ahead; WidgetKit reloads at 07:00 (N-05), or in 15 minutes
+/// while there is no snapshot to read.
 nonisolated struct ExpiringProvider: TimelineProvider {
     func placeholder(in context: Context) -> ExpiringWidgetEntry {
         ExpiringWidgetEntry(date: .now, content: ExpiringTimelineContent(date: .now, rows: [], hasSnapshot: true, topSpaceID: nil))
@@ -21,10 +22,11 @@ nonisolated struct ExpiringProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping @Sendable (Timeline<ExpiringWidgetEntry>) -> Void) {
         let now = Date.now
-        let contents = WidgetTimelinePlanner.expiringTimeline(snapshot: WidgetSnapshotStore.appGroup()?.read(), now: now,
-                                                              calendar: .current)
+        let snapshot = WidgetSnapshotStore.appGroup()?.read()
+        let contents = WidgetTimelinePlanner.expiringTimeline(snapshot: snapshot, now: now, calendar: .current)
+        let reload = WidgetTimelinePlanner.expiringReload(hasSnapshot: snapshot != nil, after: now, calendar: .current)
         completion(Timeline(entries: contents.map { ExpiringWidgetEntry(date: $0.date, content: $0) },
-                            policy: .after(WidgetTimelinePlanner.nextReload(after: now, calendar: .current))))
+                            policy: .after(reload)))
     }
 }
 

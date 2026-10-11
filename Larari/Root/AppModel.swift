@@ -332,9 +332,9 @@ final class AppModel {
         storeLocation?.onAccessChange = { container.storeReminders.scheduleRefresh(.authorization) }
         startRemoteChanges(for: container)
         container.shoppingActivity.scheduleRefresh()     // adopts an activity that outlived the previous process, or ends it when its store is gone
-        // N-05: the first snapshot now; queued widget ticks wait for the launch share refresh above (P5-06's cache
-        // fails closed for joined households until then). The ping comes only while the app runs, so the cache is filled.
-        container.widgetSnapshots?.refresh()
+        // N-05: no snapshot yet. The widget coordinator stays inactive until the launch share refresh above has filled
+        // P5-06's permission cache (it fails closed for joined households): `refreshSharesAndWidgets` activates it, then
+        // drains the queued ticks and writes the first snapshot. A ping before that changes nothing; the queue waits.
         WidgetTickListener.start { AppModel.shared.services?.widgetSnapshots?.drainTicks() }
     }
 
@@ -354,6 +354,7 @@ final class AppModel {
 
     private func refreshSharesAndWidgets() async {
         await cloudSharing.refreshShares()
+        services?.widgetSnapshots?.activate()      // R14 I1: from now on the snapshot carries real permissions
         services?.widgetSnapshots?.drainTicks()
     }
 
@@ -429,12 +430,26 @@ final class AppModel {
         return await storeLocation?.currentCoordinate()
     }
 
-    /// `TickShoppingItemIntent` through `ShoppingTickBridge` (registered in AppDelegate), also in a background launch.
-    func tick(itemIDs: [UUID]) async {
-        guard let services = await prepareServices() else { return }
-        // A cold launch for the tick: without the share cache a joined household's purchase fails closed and is lost.
-        await launchShareRefresh?.value
+    /// How long a tick in the shared store waits for the launch share refresh (R14 I2; the SetupGate allows 15 s).
+    static let tickShareRefreshWait: Duration = .seconds(5)
+
+    /// `TickShoppingItemIntent` and the iOS 27 widget tick through `ShoppingTickBridge` (registered in AppDelegate),
+    /// also in a background launch. Returns false only when the app has no services, so the widget's intent queues the
+    /// tick instead (R14 m3); a purchase that fails (a read-only household, a vanished item) still counts as taken.
+    func tick(itemIDs: [UUID]) async -> Bool {
+        guard let services = await prepareServices() else { return false }
+        // P5-06's share cache fails closed for joined households until the launch share refresh ran, so a tick in the
+        // shared store waits for it, at most 5 s; owner and Personal spaces live in the private store and never wait.
+        var waitRanOut = false
+        if let launch = launchShareRefresh,
+           ShoppingActivityActions.involvesStore(persistence.sharedStore, itemIDs: itemIDs,
+                                                 context: services.shopping.context) {
+            waitRanOut = !(await BoundedWait.finished(launch, within: Self.tickShareRefreshWait))
+        }
         await services.shoppingActivity.tick(itemIDs: itemIDs)
-        services.widgetSnapshots?.refresh()     // N-05: synchronous, so a widget's app-process tick reloads with fresh data
+        // N-05: synchronous, so a widget's app-process tick reloads with fresh data. When the wait ran out, the items
+        // still open go into the widget tick queue, which the drain after the launch share refresh buys.
+        services.widgetSnapshots?.recordAppTick(itemIDs: itemIDs, requeueOpenItems: waitRanOut)
+        return true
     }
 }

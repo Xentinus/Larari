@@ -13,10 +13,16 @@ struct ShoppingTickBridgeTests {
 
     @Test func theRegisteredHandlerGetsTheItems() async {
         var received: [[UUID]] = []
-        ShoppingTickBridge.register { received.append($0) }
+        ShoppingTickBridge.register { received.append($0); return true }
         defer { ShoppingTickBridge.unregister() }
         let ids = [UUID(), UUID()]
         #expect(await ShoppingTickBridge.tick(ids))
         #expect(received == [ids])
+    }
+
+    @Test func aHandlerThatCouldNotApplyTheTickReportsFalse() async {
+        ShoppingTickBridge.register { _ in false }
+        defer { ShoppingTickBridge.unregister() }
+        #expect(await ShoppingTickBridge.tick([UUID()]) == false)
     }
 }
