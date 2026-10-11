@@ -118,7 +118,6 @@ struct ShoppingActivityCoordinatorTests {
         try add("Vaj", to: party)
         await coordinator.refresh()
         let content = try #require(controller.latest)
-        #expect(content.nextItems.map(\.name) == ["Kenyér", "Vaj"])
         #expect(content.remainingCount == 2)
         #expect(content.doneCount == 1)
         #expect(content.listCount == 2)
@@ -133,16 +132,14 @@ struct ShoppingActivityCoordinatorTests {
     }
 
     @Test func aTickBuysTheRowAndTheLastOneFinishesAfterFiveMinutes() async throws {
-        try add("Tej")
-        try add("Kenyér")
+        let milk = try add("Tej")
+        let bread = try add("Kenyér")
         await arrive()
-        let first = try #require(controller.latest?.nextItems.first)
-        await coordinator.tick(itemIDs: first.itemIDs)
+        await coordinator.tick(itemIDs: [milk.publicId])
         #expect(controller.latest?.remainingCount == 1)
         #expect(controller.latest?.doneCount == 1)
 
-        let last = try #require(controller.latest?.nextItems.first)
-        await coordinator.tick(itemIDs: last.itemIDs)
+        await coordinator.tick(itemIDs: [bread.publicId])
         let end = try #require(controller.ended.last)
         #expect(end.content?.isFinished == true)
         #expect(end.content?.doneCount == 2)
@@ -213,7 +210,7 @@ struct ShoppingActivityCoordinatorTests {
         let milk = try add("Tej")
         try add("Kenyér")
         let shown = ShoppingActivityContent(title: "Spar Budaörs", spaceName: stack.space.name, listCount: 1,
-                                            remainingCount: 3, doneCount: 1, nextItems: [], canTick: true)
+                                            remainingCount: 3, doneCount: 1)
         controller.seed(RunningShoppingActivity(id: "old", spaceID: stack.space.publicId,
                                                 scope: .store(spar.publicId), content: shown))
         controller.seed(RunningShoppingActivity(id: "extra", spaceID: stack.space.publicId,
@@ -231,7 +228,7 @@ struct ShoppingActivityCoordinatorTests {
         let milk = try add("Tej")
         try add("Kenyér")
         let shown = ShoppingActivityContent(title: "Spar Budaörs", spaceName: stack.space.name, listCount: 1,
-                                            remainingCount: 1, doneCount: 0, nextItems: [], canTick: true)
+                                            remainingCount: 1, doneCount: 0)
         controller.seed(RunningShoppingActivity(id: "old", spaceID: stack.space.publicId,
                                                 scope: .store(spar.publicId), content: shown))
         await coordinator.tick(itemIDs: [milk.publicId])
@@ -239,7 +236,7 @@ struct ShoppingActivityCoordinatorTests {
         #expect(controller.latest?.doneCount == 1)
     }
 
-    @Test func aReadOnlyHouseholdShowsItemsWithoutTicks() async throws {
+    @Test func aReadOnlyHouseholdStillShowsTheCounts() async throws {
         try add("Tej")
         let readOnly = ShoppingActivityCoordinator(
             shopping: ShoppingService(spaceStore: stack.spaceStore, context: stack.context, userRecordName: stack.user,
@@ -247,7 +244,7 @@ struct ShoppingActivityCoordinatorTests {
             inventory: stack.inventory, pending: stack.pending, controller: controller, memory: memory,
             debounce: .zero)
         await readOnly.evaluate(position: atSpar, branches: [], preferredSpaceID: nil)
-        #expect(controller.started.first?.content.canTick == false)
+        #expect(controller.started.first?.content.remainingCount == 1)
     }
 
     func addDM(latitude: Double = 47.4602) throws -> ShoppingLocation {
@@ -270,7 +267,7 @@ struct ShoppingActivityCoordinatorTests {
     @Test func anAdoptedActivityWithARememberedCenterEndsFarAway() async throws {
         try add("Tej")
         let shown = ShoppingActivityContent(title: "Spar Budaörs", spaceName: stack.space.name, listCount: 1,
-                                            remainingCount: 1, doneCount: 0, nextItems: [], canTick: true)
+                                            remainingCount: 1, doneCount: 0)
         memory.started = .init(activityID: "old", spaceID: stack.space.publicId, scope: .store(spar.publicId),
                                center: atSpar)
         controller.seed(RunningShoppingActivity(id: "old", spaceID: stack.space.publicId,
@@ -281,11 +278,10 @@ struct ShoppingActivityCoordinatorTests {
     }
 
     @Test func aFinishedChainActivityKeepsTheChainTitle() async throws {
-        try add("Tej")
+        let milk = try add("Tej")
         let budakeszi = Coordinate(latitude: 47.5100, longitude: 18.9300)
         await arrive(budakeszi, branches: [ChainBranch(chainKey: "spar", center: budakeszi)])
-        let row = try #require(controller.latest?.nextItems.first)
-        await coordinator.tick(itemIDs: row.itemIDs)
+        await coordinator.tick(itemIDs: [milk.publicId])
         let end = try #require(controller.ended.last)
         #expect(end.content?.title == "Spar")
         #expect(end.content?.isFinished == true)
@@ -314,11 +310,10 @@ struct ShoppingActivityCoordinatorTests {
     @Test func aShrinkingStoreSetKeepsTheRunningActivity() async throws {
         try add("Tej")
         let dm = try addDM()
-        try add("Fogkrém", to: party, at: dm)
+        let toothpaste = try add("Fogkrém", to: party, at: dm)
         await arrive()
         if case .stores = try #require(controller.started.first).scope {} else { Issue.record("expected .stores") }
-        let dmRow = try #require(controller.latest?.nextItems.first { $0.name == "Fogkrém" })
-        await coordinator.tick(itemIDs: dmRow.itemIDs)
+        await coordinator.tick(itemIDs: [toothpaste.publicId])
         await arrive()
         #expect(controller.started.count == 1)
         #expect(controller.ended.isEmpty)
@@ -327,11 +322,10 @@ struct ShoppingActivityCoordinatorTests {
     }
 
     @Test func aGrowingStoreSetRestartsAndKeepsTheDoneCount() async throws {
-        try add("Tej")
+        let milk = try add("Tej")
         try add("Kenyér")
         await arrive()
-        let first = try #require(controller.latest?.nextItems.first)
-        await coordinator.tick(itemIDs: first.itemIDs)
+        await coordinator.tick(itemIDs: [milk.publicId])
         let dm = try addDM()
         try add("Fogkrém", to: party, at: dm)
         await arrive()

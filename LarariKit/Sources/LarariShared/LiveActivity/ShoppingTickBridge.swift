@@ -1,8 +1,9 @@
 import Foundation
 
-/// Hands a tick from an App Intent to the app (N-04; N-05's widget tick reuses it). The app registers its handler in
-/// `application(_:didFinishLaunchingWithOptions:)`, which also runs when the system launches the app in the
-/// background for a `LiveActivityIntent`. The widget extension never registers one, so there `tick` returns false.
+/// Hands a tick from an App Intent to the app (N-04; since the N-05 Live Activity rework only the Shopping list
+/// widget's tick uses it). The app registers its handler in `application(_:didFinishLaunchingWithOptions:)`, which
+/// also runs when the system launches the app in the background for an intent that runs in the app's process (iOS 27
+/// `allowedExecutionTargets = .main`). The widget extension never registers one, so there `tick` returns false.
 @MainActor
 public enum ShoppingTickBridge {
     /// Returns whether the app took the tick (false: it has no services, e.g. the account is unavailable), so the

@@ -433,9 +433,9 @@ final class AppModel {
     /// How long a tick in the shared store waits for the launch share refresh (R14 I2; the SetupGate allows 15 s).
     static let tickShareRefreshWait: Duration = .seconds(5)
 
-    /// `TickShoppingItemIntent` and the iOS 27 widget tick through `ShoppingTickBridge` (registered in AppDelegate),
-    /// also in a background launch. Returns false only when the app has no services, so the widget's intent queues the
-    /// tick instead (R14 m3); a purchase that fails (a read-only household, a vanished item) still counts as taken.
+    /// The iOS 27 widget tick through `ShoppingTickBridge` (registered in AppDelegate), also in a background launch.
+    /// Returns false only when the app has no services, so the widget's intent queues the tick instead (R14 m3); a
+    /// purchase that fails (a read-only household, a vanished item) still counts as taken.
     func tick(itemIDs: [UUID]) async -> Bool {
         guard let services = await prepareServices() else { return false }
         // P5-06's share cache fails closed for joined households until the launch share refresh ran, so a tick in the

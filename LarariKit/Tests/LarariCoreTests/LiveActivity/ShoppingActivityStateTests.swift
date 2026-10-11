@@ -54,25 +54,21 @@ struct ShoppingActivityStateTests {
         #expect(try open(.chain("spar")).map(ShoppingService.displayName(of:)) == ["Tej", "Vaj"])
     }
 
-    @Test func theSameProductInTheSameUnitIsOneRowWithTheQuantitiesAdded() throws {
+    @Test func theSameProductInTheSameUnitCountsAsOneRow() throws {
         let milk = try stack.makeProduct("Tej", unit: .liter)
         let spar = try stack.makeStore("Spar")
         let weekly = try stack.service.createList(name: "Heti", in: stack.space)
         let party = try stack.service.createList(name: "Buli", in: stack.space)
-        let first = try stack.service.addItem(to: weekly, product: milk, quantity: 2, shoppingLocation: spar)
-        try stack.service.addItem(to: weekly, customName: "Kenyér", shoppingLocation: spar)
-        let second = try stack.service.addItem(to: party, product: milk, quantity: 1, shoppingLocation: spar)
+        try stack.service.addItem(to: weekly, product: milk, quantity: 2, shoppingLocation: spar)
+        let bread = try stack.service.addItem(to: weekly, customName: "Kenyér", shoppingLocation: spar)
+        try stack.service.addItem(to: party, product: milk, quantity: 1, shoppingLocation: spar)
         try stack.service.addItem(to: party, product: milk, quantity: 6, unit: .piece, shoppingLocation: spar)
-        try stack.service.addItem(to: party, customName: "Kenyér", shoppingLocation: spar)   // name-only: never merged
+        let otherBread = try stack.service.addItem(to: party, customName: "Kenyér", shoppingLocation: spar)   // name-only: never merged
 
-        let rows = ShoppingActivityState.rows(for: try open(.store(spar.publicId)), locale: hu)
+        let keys = ShoppingActivityState.rowKeys(for: try open(.store(spar.publicId)))
 
-        #expect(rows.map(\.name) == ["Tej", "Kenyér", "Tej", "Kenyér"])
-        #expect(rows[0].quantity == Quantity.format(3, unit: .liter, locale: hu))
-        #expect(rows[0].itemIDs == [first.publicId, second.publicId])
-        #expect(rows[0].id == "p:\(milk.publicId.uuidString):liter")
-        #expect(rows[2].quantity == Quantity.format(6, unit: .piece, locale: hu))
-        #expect(Set(rows.map(\.id)).count == 4)
+        #expect(keys == ["p:\(milk.publicId.uuidString):liter", "i:\(bread.publicId.uuidString)",
+                         "p:\(milk.publicId.uuidString):piece", "i:\(otherBread.publicId.uuidString)"])
     }
 
     @Test func theTitleIsTheStoreOrTheChainAndNilWhenTheStoreIsGone() throws {
@@ -127,7 +123,7 @@ struct ShoppingActivityStateTests {
         #expect(ShoppingActivityState.title(scope: scope, in: stack.space, items: [], locations: locations, locale: hu) == nil)
     }
 
-    @Test func contentShowsThreeNextRowsTheCountsAndTheListCount() throws {
+    @Test func contentShowsTheCountsAndTheListCount() throws {
         let spar = try stack.makeStore("Spar")
         let weekly = try stack.service.createList(name: "Heti", in: stack.space)
         let party = try stack.service.createList(name: "Buli", in: stack.space)
@@ -136,15 +132,13 @@ struct ShoppingActivityStateTests {
         let items = try open(.store(spar.publicId))
         let content = ShoppingActivityState.content(
             title: "Spar", spaceName: "Otthon", listCount: ShoppingActivityState.listCount(of: items),
-            rows: ShoppingActivityState.rows(for: items, locale: hu), doneCount: 2, canTick: true)
-        #expect(content.nextItems.map(\.name) == ["A", "B", "C"])
+            remainingCount: ShoppingActivityState.rowKeys(for: items).count, doneCount: 2)
         #expect(content.remainingCount == 5)
         #expect(content.doneCount == 2)
         #expect(content.totalCount == 7)
         #expect(content.listCount == 2)
         #expect(content.title == "Spar")
         #expect(content.spaceName == "Otthon")
-        #expect(content.canTick)
         #expect(!content.isFinished)
     }
 

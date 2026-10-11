@@ -64,7 +64,8 @@ public final class ShoppingActivityCoordinator {
         await serially { await $0.refreshNow() }
     }
 
-    /// `TickShoppingItemIntent` through `ShoppingTickBridge`, possibly in a process launched just for it.
+    /// A tick from the app (the Shopping list widget's iOS 27 tick through `ShoppingTickBridge`, possibly in a
+    /// process launched just for it): buys, then refreshes the activity.
     public func tick(itemIDs: [UUID]) async {
         await serially { await $0.tickNow(itemIDs: itemIDs) }
     }
@@ -132,11 +133,11 @@ public final class ShoppingActivityCoordinator {
             await end(content: nil, dismissal: .immediate)
             return
         }
-        progress.observe(openKeys: Set(snapshot.rows.map(\.id)))
+        progress.observe(openKeys: Set(snapshot.rowKeys))
         self.progress = progress
         let content = ShoppingActivityState.content(
             title: snapshot.title ?? lastContent?.title ?? "", spaceName: space.name, listCount: snapshot.listCount,
-            rows: snapshot.rows, doneCount: progress.doneCount, canTick: shopping.canEdit(space))
+            remainingCount: snapshot.rowKeys.count, doneCount: progress.doneCount)
         if content.isFinished {
             await end(content: content, dismissal: .after(now().addingTimeInterval(Self.finishedLinger)))
         } else if content != lastContent || forceUpdate {
@@ -157,7 +158,7 @@ public final class ShoppingActivityCoordinator {
 
     private func start(_ target: ShoppingActivityTarget) async {
         guard let space = space(target.spaceID), let snapshot = try? snapshot(of: target.scope, in: space),
-              let title = snapshot.title, !snapshot.rows.isEmpty else { return }
+              let title = snapshot.title, !snapshot.rowKeys.isEmpty else { return }
         // A set of stores that grew keeps what was already bought; another place starts from zero.
         var carriedDone = 0
         if let running = current, running.spaceID == target.spaceID,
@@ -169,15 +170,15 @@ public final class ShoppingActivityCoordinator {
             if current != nil { return }                         // defensive: something took the place meanwhile
         }
         let content = ShoppingActivityState.content(title: title, spaceName: space.name,
-                                                    listCount: snapshot.listCount, rows: snapshot.rows,
-                                                    doneCount: carriedDone, canTick: shopping.canEdit(space))
+                                                    listCount: snapshot.listCount,
+                                                    remainingCount: snapshot.rowKeys.count, doneCount: carriedDone)
         do {
             let id = try controller.start(ShoppingActivityRequest(spaceID: target.spaceID, scope: target.scope,
                                                                   content: content, staleDate: staleDate(),
                                                                   relevance: Self.relevance))
             activityID = id
             current = target
-            progress = ShoppingActivityProgress(openKeys: Set(snapshot.rows.map(\.id)), carriedDone: carriedDone)
+            progress = ShoppingActivityProgress(openKeys: Set(snapshot.rowKeys), carriedDone: carriedDone)
             lastContent = content
             memory.started = .init(activityID: id, spaceID: target.spaceID, scope: target.scope, center: target.center)
         } catch {
@@ -221,7 +222,7 @@ public final class ShoppingActivityCoordinator {
                                             center: remembered?.activityID == first.id ? remembered?.center : nil)
         let openKeys = space(first.spaceID)
             .flatMap { try? snapshot(of: first.scope, in: $0) }
-            .map { Set($0.rows.map(\.id)) } ?? []
+            .map { Set($0.rowKeys) } ?? []
         // Rows that left while no process ran count as done too.
         let carried = first.content.doneCount + max(0, first.content.remainingCount - openKeys.count)
         activityID = first.id
@@ -290,7 +291,7 @@ public final class ShoppingActivityCoordinator {
 
     private struct Snapshot {
         let title: String?
-        let rows: [ShoppingActivityItem]
+        let rowKeys: [String]
         let listCount: Int
     }
 
@@ -298,7 +299,7 @@ public final class ShoppingActivityCoordinator {
         let items = try ShoppingActivityState.openItems(scope: scope, in: space, service: shopping, pending: pending)
         return Snapshot(title: ShoppingActivityState.title(scope: scope, in: space, items: items, locations: locations,
                                                            locale: locale),
-                        rows: ShoppingActivityState.rows(for: items, locale: locale),
+                        rowKeys: ShoppingActivityState.rowKeys(for: items),
                         listCount: ShoppingActivityState.listCount(of: items))
     }
 }

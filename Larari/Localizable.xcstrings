@@ -1,52 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "activity.intent.tick.item" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Artikel"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Items"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tételek"
-          }
-        }
-      }
-    },
-    "activity.intent.tick.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Artikel gekauft"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark item as bought"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tétel megvéve"
-          }
-        }
-      }
-    },
     "add.inventoryItem" : {
       "extractionState" : "manual",
       "localizations" : {

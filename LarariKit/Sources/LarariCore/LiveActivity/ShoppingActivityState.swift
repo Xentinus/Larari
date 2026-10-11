@@ -24,8 +24,8 @@ public struct ShoppingActivityProgress: Equatable, Sendable {
 }
 
 /// Builds the shopping Live Activity's content (N-04): the open items of one store or chain from every list of a
-/// household (D5 A, D6 A, D10 A), merged by product and unit (D7 A), with quantities (D8 A). Names are cut to
-/// 40 characters for ActivityKit's 4 KB limit.
+/// household (D5 A, D6 A, D10 A), counted once per product and unit (D7 A). Names are cut to 40 characters for
+/// ActivityKit's 4 KB limit.
 @MainActor
 public enum ShoppingActivityState {
     public static let maxNameLength = 40
@@ -47,23 +47,14 @@ public enum ShoppingActivityState {
         }
     }
 
-    /// One row per product and unit (quantities added), one row per name-only item; the first occurrence decides
-    /// the order.
-    public static func rows(for items: [ShoppingListItem], locale: Locale) -> [ShoppingActivityItem] {
-        var order: [String] = []
-        var groups: [String: [ShoppingListItem]] = [:]
-        for item in items {
+    /// One key per product and unit, one per name-only item, in first-occurrence order (D7 A): what the activity
+    /// counts as one row to buy. Keys are stable across updates: `p:<product>:<unit>`, `i:<item>`.
+    public static func rowKeys(for items: [ShoppingListItem]) -> [String] {
+        var seen: Set<String> = []
+        return items.compactMap { item in
             let key = item.product.flatMap { $0.isGone ? nil : "p:\($0.publicId.uuidString):\(item.unit.rawValue)" }
                 ?? "i:\(item.publicId.uuidString)"
-            if groups[key] == nil { order.append(key) }
-            groups[key, default: []].append(item)
-        }
-        return order.compactMap { key in
-            guard let group = groups[key], let first = group.first else { return nil }
-            let total = group.reduce(Decimal(0)) { $0 + $1.quantity }
-            return ShoppingActivityItem(id: key, itemIDs: group.map(\.publicId),
-                                        name: truncated(ShoppingService.displayName(of: first)),
-                                        quantity: Quantity.format(total, unit: first.unit, locale: locale))
+            return seen.insert(key).inserted ? key : nil
         }
     }
 
@@ -99,11 +90,10 @@ public enum ShoppingActivityState {
         Set(items.compactMap { $0.shoppingList?.publicId }).count
     }
 
-    public static func content(title: String, spaceName: String, listCount: Int, rows: [ShoppingActivityItem],
-                               doneCount: Int, canTick: Bool) -> ShoppingActivityContent {
+    public static func content(title: String, spaceName: String, listCount: Int, remainingCount: Int,
+                               doneCount: Int) -> ShoppingActivityContent {
         ShoppingActivityContent(title: truncated(title), spaceName: truncated(spaceName), listCount: listCount,
-                                remainingCount: rows.count, doneCount: doneCount,
-                                nextItems: Array(rows.prefix(ShoppingActivityContent.maxNextItems)), canTick: canTick)
+                                remainingCount: remainingCount, doneCount: doneCount)
     }
 
     public static func truncated(_ text: String) -> String {
