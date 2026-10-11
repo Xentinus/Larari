@@ -33,7 +33,8 @@ struct TickWidgetShoppingItemIntent: AppIntent {
         if await ShoppingTickBridge.tick([item]) { return .result() }          // app process
         guard let store = WidgetSnapshotStore.appGroup(), let queue = WidgetTickQueue.appGroup() else { return .result() }
         try queue.append(QueuedTick(itemID: item, listID: list, queuedAt: .now))
-        try store.markTicked(itemID: item, listID: list)
+        // The queue is the source of truth; a snapshot that could not be marked only shows the row until the app runs.
+        try? store.markTicked(itemID: item, listID: list)
         WidgetTickPing.post()
         return .result()
     }

@@ -3,6 +3,7 @@ import Foundation
 import LarariCore
 import LarariShared
 import Observation
+import WidgetKit
 
 /// The single composition root. `AppModel.shared` is the only instance outside previews:
 /// `LarariApp` injects it.
@@ -14,7 +15,8 @@ final class AppModel {
     static let shared = AppModel()
 
     static let containerIdentifier = "iCloud.app.larari"
-    static let appGroup = "group.app.larari"
+    /// The one App Group literal lives in LarariShared, which the widget extension reads too (N-05).
+    static let appGroup = SharedContainer.appGroup
 
     /// True only in builds with the CLOUDKIT_ENABLED compilation condition (C-01).
     static var isCloudKitEnabled: Bool {
@@ -250,6 +252,21 @@ final class AppModel {
         return ActivityKitShoppingController()
     }
 
+    /// The widgets' App Group files (N-05): cloud mode only, never under UI tests.
+    static var widgetStorage: (store: WidgetSnapshotStore, queue: WidgetTickQueue)? {
+        #if DEBUG
+        if UITestHooks.isActive { return nil }
+        #endif
+        #if CLOUDKIT_ENABLED
+        guard let store = WidgetSnapshotStore.appGroup(appGroup), let queue = WidgetTickQueue.appGroup(appGroup) else {
+            return nil
+        }
+        return (store, queue)
+        #else
+        return nil
+        #endif
+    }
+
     /// The Live Activity memory (N-04): the app defaults, or under UI tests a suite wiped on every launch, so runs
     /// never suppress each other or touch the real app's record.
     static var shoppingActivityDefaults: UserDefaults {
@@ -280,6 +297,7 @@ final class AppModel {
         let storeAddressCacheURL = StoreAddressCache.defaultURL
         let storeAddresses: (any StoreAddressResolving)? = MapKitStoreAddressResolver()
         #endif
+        let widgets = Self.widgetStorage
         let container = ServiceContainer(spaceStore: spaceStore, context: persistence.viewContext,
                                          userRecordName: userRecordName, notificationCenter: Self.notificationCenter,
                                          persistence: persistence, sharing: sharingService,
@@ -289,7 +307,9 @@ final class AppModel {
                                          storeAddressCacheURL: storeAddressCacheURL,
                                          storeAddresses: storeAddresses,
                                          liveActivities: Self.liveActivityController,
-                                         shoppingActivityDefaults: Self.shoppingActivityDefaults)
+                                         shoppingActivityDefaults: Self.shoppingActivityDefaults,
+                                         widgetStore: widgets?.store, widgetQueue: widgets?.queue,
+                                         reloadWidgets: { WidgetCenter.shared.reloadAllTimelines() })
         #if DEBUG
         if UITestHooks.isSeeded {
             try? await UITestSeed.populate(container, in: personalSpace)
@@ -309,10 +329,16 @@ final class AppModel {
         storeLocation?.onAccessChange = { container.storeReminders.scheduleRefresh(.authorization) }
         startRemoteChanges(for: container)
         container.shoppingActivity.scheduleRefresh()     // adopts an activity that outlived the previous process, or ends it when its store is gone
+        // N-05: the first snapshot now; queued widget ticks wait for the share refresh above (P5-06's cache fails
+        // closed for joined households until then). The ping comes only while the app runs, so the cache is filled.
+        container.widgetSnapshots?.refresh()
+        WidgetTickListener.start { AppModel.shared.services?.widgetSnapshots?.drainTicks() }
     }
 
     /// Re-reads shares and permissions off the main thread (P5-06): at launch, after remote changes (debounced, an
     /// import posts many) and when the app becomes active, so removals and permission changes show once imported.
+    /// Then applies the ticks the widgets queued and rewrites their snapshot (N-05), so purchases in joined households
+    /// meet a filled permission cache and the lists' tick buttons follow permission changes.
     func scheduleShareRefresh(after delay: Duration = .seconds(1)) {
         shareRefresh?.cancel()
         shareRefresh = Task { [cloudSharing] in
@@ -320,6 +346,7 @@ final class AppModel {
                 do { try await Task.sleep(for: delay) } catch { return }
             }
             await cloudSharing.refreshShares()
+            services?.widgetSnapshots?.drainTicks()
         }
     }
 
@@ -355,7 +382,9 @@ final class AppModel {
         let notifications = container.notifications
         let storeReminders = container.storeReminders
         let shoppingActivity = container.shoppingActivity
+        let widgetSnapshots = container.widgetSnapshots
         let observer = RemoteChangeObserver(container: persistence.container, processor: processor) { batch in
+            widgetSnapshots?.scheduleRefresh()
             attribution.record(batch.foreignChanges)
             let scheduleRelevant: Set<String> = ["Space", "Product", "InventoryItem", "StorageLocation"]
             if !batch.changedEntityNames.isDisjoint(with: scheduleRelevant) {
@@ -397,5 +426,6 @@ final class AppModel {
     func tick(itemIDs: [UUID]) async {
         guard let services = await prepareServices() else { return }
         await services.shoppingActivity.tick(itemIDs: itemIDs)
+        services.widgetSnapshots?.refresh()     // N-05: synchronous, so a widget's app-process tick reloads with fresh data
     }
 }

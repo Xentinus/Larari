@@ -66,7 +66,8 @@ struct RootView: View {
                     .onChange(of: scenePhase) { _, phase in
                         if phase == .active {
                             startNextInvitation()
-                            app.scheduleShareRefresh(after: .zero)     // P5-06: removals and permissions after an import
+                            // P5-06: removals and permissions after an import; then N-05's queued widget ticks
+                            app.scheduleShareRefresh(after: .zero)
                         }
                     }
                     .onChange(of: app.shareAcceptance.state) { _, state in

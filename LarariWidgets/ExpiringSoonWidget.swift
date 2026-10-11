@@ -113,7 +113,7 @@ struct ExpiringRowView: View {
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: row.item.name).font(.subheadline).lineLimit(1)
-                    label
+                    label.minimumScaleFactor(0.8)       // systemSmall: a long label shrinks a little before it truncates
                 }
             }
         }
@@ -155,10 +155,12 @@ struct ExpiringRectangularView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Label {
-                Text("widget.expiring.count \(content.rows.count)").font(.headline)
-            } icon: {
-                Image(systemName: "clock").widgetAccentable()
+            if content.hasSnapshot {        // no snapshot yet: only "open the app", not "0 expiring soon"
+                Label {
+                    Text("widget.expiring.count \(content.rows.count)").font(.headline)
+                } icon: {
+                    Image(systemName: "clock").widgetAccentable()
+                }
             }
             if let first = content.rows.first {
                 HStack(spacing: 4) {
