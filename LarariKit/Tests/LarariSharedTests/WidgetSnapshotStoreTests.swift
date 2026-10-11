@@ -52,6 +52,23 @@ struct WidgetSnapshotStoreTests {
         #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == [WidgetSnapshotStore.fileName])
     }
 
+    @Test func writeIfChangedSkipsTheSameContentWhateverItsGenerationTime() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        var first = snapshot()
+        first.expiring[0] = ExpiringItemSnapshot(id: UUID(), name: "Tej", spaceID: nil, spaceName: "Otthon",
+                                                 expiresAt: Date(timeIntervalSince1970: 1_790_086_400.75))   // sub-second
+        #expect(try store.writeIfChanged(first))
+
+        var later = first
+        later.generatedAt = first.generatedAt.addingTimeInterval(600.5)
+        #expect(try store.writeIfChanged(later) == false)
+        #expect(store.read()?.generatedAt == first.generatedAt)
+
+        try store.markTicked(itemID: milkID, listID: listID)          // the extension changed the file
+        #expect(try store.writeIfChanged(later))
+        #expect(store.read()?.lists.first?.items.count == 2)
+    }
+
     @Test func markTickedRemovesTheRowAndCountsDown() throws {
         defer { try? FileManager.default.removeItem(at: directory) }
         try store.write(snapshot())

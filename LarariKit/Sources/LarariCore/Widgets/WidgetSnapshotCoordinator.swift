@@ -48,15 +48,18 @@ public final class WidgetSnapshotCoordinator {
     }
 
     /// Synchronous on purpose: the app-process widget tick must have written the file before its intent returns,
-    /// because WidgetKit reloads the widget right after.
+    /// because WidgetKit reloads the widget right after. Rows whose tick is still queued stay out, and an unchanged
+    /// snapshot is neither written nor reloaded (the widgets' reload budget).
     public func refresh() {
         pendingRefresh?.cancel()
+        let queued = Set(queue.pending().map(\.itemID))
         guard let snapshot = try? WidgetSnapshotBuilder.build(context: context, spaceStore: spaceStore,
                                                               shopping: shopping, pending: pending, now: now(),
-                                                              calendar: calendar, locale: locale) else { return }
-        guard (try? store.write(snapshot)) != nil else { return }
+                                                              calendar: calendar, locale: locale,
+                                                              queuedItemIDs: queued),
+              let written = try? store.writeIfChanged(snapshot) else { return }
         lastSnapshot = snapshot
-        reload()
+        if written { reload() }
     }
 
     public func scheduleRefresh() {

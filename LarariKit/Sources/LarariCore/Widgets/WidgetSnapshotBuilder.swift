@@ -3,18 +3,20 @@ import Foundation
 import LarariShared
 
 /// Turns the store into the widgets' snapshot (N-05): every space's open items expiring before the 14-day window plus
-/// the timeline's 7-day look-ahead (expired ones included), and every shopping list's first open items.
+/// the timeline's 7-day look-ahead (expired ones included), and every shopping list's first open items. Items whose
+/// widget tick is still queued (`queuedItemIDs`) stay out, as the extension already removed them from the widget.
 @MainActor
 public enum WidgetSnapshotBuilder {
     public static let maxExpiring = 40
     public static let maxItemsPerList = 8
 
     public static func build(context: NSManagedObjectContext, spaceStore: SpaceStore, shopping: ShoppingService,
-                             pending: PendingDeletions, now: Date, calendar: Calendar,
-                             locale: Locale) throws -> WidgetSnapshot {
+                             pending: PendingDeletions, now: Date, calendar: Calendar, locale: Locale,
+                             queuedItemIDs: Set<UUID> = []) throws -> WidgetSnapshot {
         WidgetSnapshot(generatedAt: now, soonDays: ExpirationStatus.soonDays, criticalDays: ExpirationStatus.criticalDays,
                        expiring: try expiring(in: context, pending: pending, now: now, calendar: calendar),
-                       lists: try lists(spaceStore: spaceStore, shopping: shopping, pending: pending, locale: locale))
+                       lists: try lists(spaceStore: spaceStore, shopping: shopping, pending: pending, locale: locale,
+                                        queuedItemIDs: queuedItemIDs))
     }
 
     private static func expiring(in context: NSManagedObjectContext, pending: PendingDeletions, now: Date,
@@ -38,11 +40,12 @@ public enum WidgetSnapshotBuilder {
     }
 
     private static func lists(spaceStore: SpaceStore, shopping: ShoppingService, pending: PendingDeletions,
-                              locale: Locale) throws -> [ShoppingListSnapshot] {
+                              locale: Locale, queuedItemIDs: Set<UUID>) throws -> [ShoppingListSnapshot] {
         try spaceStore.allSpaces().flatMap { space in
             try shopping.lists(in: space).map { list in
                 let open = try shopping.unpurchasedItems(in: list).filter { item in
-                    !pending.contains(item.publicId) && !(item.product.map { pending.contains($0.publicId) } ?? false)
+                    !pending.contains(item.publicId) && !queuedItemIDs.contains(item.publicId)
+                        && !(item.product.map { pending.contains($0.publicId) } ?? false)
                 }
                 return ShoppingListSnapshot(
                     id: list.publicId, spaceID: space.publicId, spaceName: space.name, name: list.name,

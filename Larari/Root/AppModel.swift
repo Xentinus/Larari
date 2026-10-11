@@ -83,6 +83,9 @@ final class AppModel {
     private(set) var remoteChanges: RemoteChangeObserver?
     private var isBuildingServices = false
     private var shareRefresh: Task<Void, Never>?
+    /// The first share refresh after the services are built, never cancelled or replaced: a tick that launched the app
+    /// waits for it (`tick(itemIDs:)`), since the P5-06 share cache fails closed for joined households until it ran.
+    private var launchShareRefresh: Task<Void, Never>?
     private(set) var bootstrapError: (any Error)?
 
     init(persistence: PersistenceController,
@@ -325,12 +328,12 @@ final class AppModel {
         }
         #endif
         services = container
-        scheduleShareRefresh(after: .zero)
+        launchShareRefresh = Task { await refreshSharesAndWidgets() }
         storeLocation?.onAccessChange = { container.storeReminders.scheduleRefresh(.authorization) }
         startRemoteChanges(for: container)
         container.shoppingActivity.scheduleRefresh()     // adopts an activity that outlived the previous process, or ends it when its store is gone
-        // N-05: the first snapshot now; queued widget ticks wait for the share refresh above (P5-06's cache fails
-        // closed for joined households until then). The ping comes only while the app runs, so the cache is filled.
+        // N-05: the first snapshot now; queued widget ticks wait for the launch share refresh above (P5-06's cache
+        // fails closed for joined households until then). The ping comes only while the app runs, so the cache is filled.
         container.widgetSnapshots?.refresh()
         WidgetTickListener.start { AppModel.shared.services?.widgetSnapshots?.drainTicks() }
     }
@@ -341,13 +344,17 @@ final class AppModel {
     /// meet a filled permission cache and the lists' tick buttons follow permission changes.
     func scheduleShareRefresh(after delay: Duration = .seconds(1)) {
         shareRefresh?.cancel()
-        shareRefresh = Task { [cloudSharing] in
+        shareRefresh = Task {
             if delay > .zero {
                 do { try await Task.sleep(for: delay) } catch { return }
             }
-            await cloudSharing.refreshShares()
-            services?.widgetSnapshots?.drainTicks()
+            await refreshSharesAndWidgets()
         }
+    }
+
+    private func refreshSharesAndWidgets() async {
+        await cloudSharing.refreshShares()
+        services?.widgetSnapshots?.drainTicks()
     }
 
     /// The services for work without a scene (N-01 background refresh): a background launch never shows RootView,
@@ -425,6 +432,8 @@ final class AppModel {
     /// `TickShoppingItemIntent` through `ShoppingTickBridge` (registered in AppDelegate), also in a background launch.
     func tick(itemIDs: [UUID]) async {
         guard let services = await prepareServices() else { return }
+        // A cold launch for the tick: without the share cache a joined household's purchase fails closed and is lost.
+        await launchShareRefresh?.value
         await services.shoppingActivity.tick(itemIDs: itemIDs)
         services.widgetSnapshots?.refresh()     // N-05: synchronous, so a widget's app-process tick reloads with fresh data
     }

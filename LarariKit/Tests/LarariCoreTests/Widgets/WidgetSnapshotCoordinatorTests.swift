@@ -44,6 +44,38 @@ struct WidgetSnapshotCoordinatorTests {
         #expect(reloads.count == 1)
     }
 
+    @Test func anUnchangedSnapshotIsNeitherRewrittenNorReloaded() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        try stack.service.addItem(to: list, customName: "Tej")
+        let coordinator = coordinator()
+
+        coordinator.refresh()
+        stack.now.advance(seconds: 60)                               // only the generation time differs
+        coordinator.refresh()
+        #expect(reloads.count == 1)
+
+        try stack.service.addItem(to: list, customName: "Kenyér")
+        coordinator.refresh()
+        #expect(reloads.count == 2)
+        #expect(store.read()?.lists.first?.remainingCount == 2)
+    }
+
+    @Test func aRowWhoseTickIsStillQueuedStaysOut() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let milk = try stack.service.addItem(to: list, customName: "Tej")
+        try stack.service.addItem(to: list, customName: "Kenyér")
+        try queue.append(QueuedTick(itemID: milk.publicId, listID: list.publicId, queuedAt: stack.now.date))
+
+        coordinator().refresh()
+
+        let snapshotList = try #require(store.read()?.lists.first)
+        #expect(snapshotList.items.map(\.name) == ["Kenyér"])
+        #expect(snapshotList.remainingCount == 1)
+        #expect(queue.pending().count == 1)                            // refresh reads the queue, never drains it
+    }
+
     @Test func aSaveSchedulesARefresh() async throws {
         defer { try? FileManager.default.removeItem(at: directory) }
         let list = try stack.service.createList(name: "Heti", in: stack.space)

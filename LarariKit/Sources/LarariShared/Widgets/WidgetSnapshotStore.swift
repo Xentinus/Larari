@@ -23,6 +23,23 @@ public struct WidgetSnapshotStore: Sendable {
         try FileCoordination.write(fileURL) { url in try data.write(to: url, options: .atomic) }
     }
 
+    /// Writes `snapshot` unless the file already holds the same content, `generatedAt` aside (compared as encoded, so
+    /// at the file's date precision). Returns whether it wrote. Reading and writing are one coordinated block, so an
+    /// extension tick (`markTicked`) in between is seen, not overwritten unchecked.
+    @discardableResult
+    public func writeIfChanged(_ snapshot: WidgetSnapshot) throws -> Bool {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let data = try FileCoordination.encoder.encode(snapshot)
+        return try FileCoordination.write(fileURL, options: .forMerging) { url in
+            if let existing = try? Data(contentsOf: url), var current = Self.decode(existing) {
+                current.generatedAt = snapshot.generatedAt
+                if try FileCoordination.encoder.encode(current) == data { return false }
+            }
+            try data.write(to: url, options: .atomic)
+            return true
+        }
+    }
+
     public func read() -> WidgetSnapshot? {
         guard let data = try? FileCoordination.read(fileURL, { try Data(contentsOf: $0) }) else { return nil }
         return Self.decode(data)
