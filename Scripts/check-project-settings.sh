@@ -88,6 +88,13 @@ expect_plist Larari/Larari.entitlements com.apple.developer.icloud-services:0 Cl
 expect_plist Larari/Larari.entitlements aps-environment development
 expect_plist Larari/Larari.entitlements com.apple.security.application-groups:0 group.app.larari
 expect_plist Larari/Info.plist UIBackgroundModes:1 remote-notification
+# N-05: the widget extension reads the widget snapshot from the App Group (no iCloud, no push).
+for cfg in Debug Release; do
+  got=$(setting LarariWidgetsExtension "$cfg" CODE_SIGN_ENTITLEMENTS)
+  [ "$got" = "LarariWidgets/LarariWidgetsExtension.entitlements" ] || { echo "FAIL LarariWidgetsExtension/$cfg CODE_SIGN_ENTITLEMENTS: got '$got'"; fail=1; }
+done
+plutil -lint -s LarariWidgets/LarariWidgetsExtension.entitlements || fail=1
+expect_plist LarariWidgets/LarariWidgetsExtension.entitlements com.apple.security.application-groups:0 group.app.larari
 # --- end cloud-mode checks ---
 plutil -lint -s Larari/Info.plist || fail=1
 expect_plist Larari/Info.plist CKSharingSupported true
