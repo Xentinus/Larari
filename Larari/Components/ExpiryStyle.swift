@@ -62,6 +62,9 @@ struct ExpiryLabel: View {
         } icon: {
             Image(systemName: level.cardGlyph).foregroundStyle(level.cardIconForeground)
         }
+        // Inside a List (the Shopping tab) the default style is the list-cell one: an icon column and a minimum row
+        // height, and in the card's fixed-size trailing column the title got no width at all.
+        .labelStyle(.titleAndIcon)
     }
 }
 

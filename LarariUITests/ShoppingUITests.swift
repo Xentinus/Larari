@@ -128,6 +128,28 @@ final class ShoppingUITests: XCTestCase {
         attachScreenshot(app, named: "shopping-deadline-card")
     }
 
+    /// The sample archive's "Tej": a note, a long store name and a passed deadline. The card stays one row tall and
+    /// shows the deadline's day next to its glyph.
+    @MainActor
+    func testCardWithNoteStoreAndPassedDeadlineStaysCompact() {
+        let app = XCUIApplication.larari(extraArguments: ["-uiTestSeed", "-uiTestImportFixture"])
+        app.launch()
+        let confirm = app.buttons["import.confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+        var swipes = 0
+        while !confirm.isHittable && swipes < 6 { app.swipeUp(); swipes += 1 }
+        confirm.tap()
+        XCTAssertTrue(app.staticTexts["import.done"].waitForExistence(timeout: 10))
+        app.buttons["import.close"].tap()
+        app.openTab("Shopping")
+
+        let card = app.buttons["shopping.item.Tej"]
+        XCTAssertTrue(card.waitForExistence(timeout: 10))
+        attachScreenshot(app, named: "shopping-tej-card")
+        XCTAssertTrue(card.label.contains("Needed by"), card.label)
+        XCTAssertLessThan(card.frame.height, 90, "card is \(card.frame.height) pt tall")
+    }
+
     @MainActor
     func testStepwiseAdd() {
         let app = XCUIApplication.launchedOnShoppingTab()
