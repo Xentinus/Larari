@@ -57,6 +57,34 @@ struct WidgetSnapshotBuilderTests {
         #expect(try build().expiring.isEmpty)
     }
 
+    @Test func stockOfAProductPendingDeletionIsLeftOut() throws {
+        let item = try stock("Tej", expiresIn: 2)
+        try stock("Sajt", expiresIn: 3)
+        stack.pending.hide(try #require(item.product).publicId)
+        #expect(try build().expiring.map(\.name) == ["Sajt"])
+    }
+
+    @Test func equalExpiryDatesKeepAStableOrder() throws {
+        for name in ["A", "B", "C", "D"] { try stock(name, expiresIn: 2) }
+        let first = try build().expiring.map(\.id)
+        #expect(first.count == 4)
+        #expect(first == (try build().expiring.map(\.id)))
+        #expect(first == first.sorted { $0.uuidString < $1.uuidString })
+    }
+
+    @Test func shoppingItemsOfAProductPendingDeletionAreNotListedOrCounted() throws {
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let milk = try stack.makeProduct("Tej")
+        try stack.service.addItem(to: list, product: milk)
+        try stack.service.addItem(to: list, customName: "Kenyér")
+        stack.pending.hide(milk.publicId)
+
+        let entry = try #require(try build().lists.first)
+
+        #expect(entry.remainingCount == 1)
+        #expect(entry.items.map(\.name) == ["Kenyér"])
+    }
+
     @Test func listsCarryTheFirstOpenItemsAndTheCount() throws {
         let list = try stack.service.createList(name: "Heti", in: stack.space)
         for index in 1...10 { try stack.service.addItem(to: list, customName: "Tétel \(index)", quantity: 2) }

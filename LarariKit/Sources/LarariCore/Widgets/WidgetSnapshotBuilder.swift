@@ -24,11 +24,12 @@ public enum WidgetSnapshotBuilder {
         let items = try context.fetchEntities(
             InventoryItem.self,
             where: NSPredicate(format: "isFullyConsumed == NO AND expiresAt != nil AND expiresAt < %@", limit as NSDate),
-            sortedBy: [NSSortDescriptor(key: "expiresAt", ascending: true)])
+            sortedBy: [NSSortDescriptor(key: "expiresAt", ascending: true), NSSortDescriptor(key: "publicId", ascending: true)])
         return items
-            .filter { !pending.contains($0.publicId) }
             .compactMap { item in
-                guard let expiresAt = item.expiresAt, let product = item.product, !product.isGone else { return nil }
+                // A product in its undo window hides its stock too (the app's `InventoryModel.sections` does the same).
+                guard !pending.contains(item.publicId), let expiresAt = item.expiresAt, let product = item.product,
+                      !product.isGone, !pending.contains(product.publicId) else { return nil }
                 return ExpiringItemSnapshot(id: item.publicId, name: product.name, spaceID: product.space?.publicId,
                                             spaceName: product.space?.name ?? "", expiresAt: expiresAt)
             }
@@ -40,7 +41,9 @@ public enum WidgetSnapshotBuilder {
                               locale: Locale) throws -> [ShoppingListSnapshot] {
         try spaceStore.allSpaces().flatMap { space in
             try shopping.lists(in: space).map { list in
-                let open = try shopping.unpurchasedItems(in: list).filter { !pending.contains($0.publicId) }
+                let open = try shopping.unpurchasedItems(in: list).filter { item in
+                    !pending.contains(item.publicId) && !(item.product.map { pending.contains($0.publicId) } ?? false)
+                }
                 return ShoppingListSnapshot(
                     id: list.publicId, spaceID: space.publicId, spaceName: space.name, name: list.name,
                     colorHex: list.color, canEdit: shopping.canEdit(space), remainingCount: open.count,
