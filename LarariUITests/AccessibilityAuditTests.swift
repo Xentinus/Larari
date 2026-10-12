@@ -1,7 +1,8 @@
 import XCTest
 
-/// X-04: `performAccessibilityAudit` on every main screen and sheet, in portrait, landscape and the largest
-/// accessibility text size. One test per screen, so a single screen can be re-run on its own.
+/// X-04: `performAccessibilityAudit` on every main screen and sheet, in portrait, landscape, the largest
+/// accessibility text size and dark mode (portrait). The light modes are forced light, so the device's own appearance
+/// does not change the result. One test per screen, so a single screen can be re-run on its own.
 final class AccessibilityAuditTests: XCTestCase {
     enum Screen: String {
         case inventory, stockSheet, storePicker, search, productDetail, productForm, shopping, listManager, addItem, purchase,
@@ -10,7 +11,7 @@ final class AccessibilityAuditTests: XCTestCase {
     }
 
     enum Mode: String, CaseIterable {
-        case portrait, landscape, largestText
+        case portrait, landscape, largestText, dark
     }
 
     /// Issues owned by the system (not our views) that cannot be fixed in Larari. Every entry needs a matching
@@ -93,10 +94,9 @@ final class AccessibilityAuditTests: XCTestCase {
             if issue.auditType == .dynamicType, element == nil, UIDevice.current.userInterfaceIdiom == .pad {
                 return true
             }
-            // iPadOS 26 only (not 27): text it cannot attribute to an element, on screens with a form sheet over
-            // dimmed content.
-            if issue.auditType == .elementDetection, element == nil, UIDevice.current.userInterfaceIdiom == .pad,
-               ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26 {
+            // iPad: text it cannot attribute to an element, on screens with a form sheet over dimmed content (seen on
+            // iPadOS 26 and 27).
+            if issue.auditType == .elementDetection, element == nil, UIDevice.current.userInterfaceIdiom == .pad {
                 return true
             }
             // Apple's semantic secondary label colour: passes at larger sizes and rises with Increase Contrast.
@@ -122,6 +122,12 @@ final class AccessibilityAuditTests: XCTestCase {
             if issue.auditType == .textClipped, [.textField, .searchField].contains(element.elementType) { return true }
             // The store picker card is Liquid Glass over the live map, so the background under its text changes.
             if screen == .storePicker, issue.auditType == .contrast, element.elementType == .staticText { return true }
+            // iPad (iPadOS 27): the category picker's second row is flagged in light and dark while the screenshots
+            // show primary text on the row background (about 21:1 and 15:1), like the rows around it that pass.
+            if screen == .categoryPicker, issue.auditType == .contrast, element.elementType == .button,
+               UIDevice.current.userInterfaceIdiom == .pad {
+                return true
+            }
             // A single black letter on the grouped background (18:1): the audit misreads one large glyph.
             if issue.auditType == .contrast, element.identifier.hasPrefix("search.section.") { return true }
             return false
@@ -130,7 +136,7 @@ final class AccessibilityAuditTests: XCTestCase {
 
     /// Dynamic Type and clipping are audited at the largest accessibility size, where they actually show. At the
     /// default size both checks only predict, and they flag ordinary SwiftUI text. Contrast does not depend on the
-    /// text size (a larger size only lowers the bar), so it is audited in portrait and landscape; at the largest
+    /// text size (a larger size only lowers the bar), so it is audited in portrait, landscape and dark; at the largest
     /// size the long, scrolled screens made it report black text on white (X-04 Results).
     static func auditTypes(for mode: Mode) -> XCUIAccessibilityAuditType {
         mode == .largestText ? XCUIAccessibilityAuditType.all.subtracting(.contrast)
@@ -222,6 +228,7 @@ final class AccessibilityAuditTests: XCTestCase {
         case .introduction: extra.append("-resetIntroduction")
         default: break
         }
+        if mode == .dark { extra.append("-uiTestDarkMode") }
         if mode == .largestText {
             extra += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         } else {

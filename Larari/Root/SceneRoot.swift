@@ -61,6 +61,8 @@ struct SceneRoot: View {
         .task {
             if route == nil, let url = UITestArchiveHook.fixtureURLIfRequested() { archiveRouter.open(url) }
         }
+        // UI tests: light unless `-uiTestDarkMode`, whatever the device is set to (X-04 audits).
+        .preferredColorScheme(UITestHooks.forcesDarkMode ? .dark : UITestHooks.isActive ? .light : nil)
         #endif
     }
 
