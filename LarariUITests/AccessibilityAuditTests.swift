@@ -31,22 +31,40 @@ final class AccessibilityAuditTests: XCTestCase {
         let screen: Screen
         let window: CGRect
         let navigationBar: CGRect?
+        /// Every navigation bar on screen (a sheet's and the screen's behind it).
+        let navigationBars: [CGRect]
         let tabBar: CGRect?
+
+        /// On iPad a sheet is a form sheet in the middle of the window: its own bounds are the visible area.
+        let sheet: CGRect?
 
         @MainActor
         init(screen: Screen, app: XCUIApplication) {
             self.screen = screen
             window = app.windows.firstMatch.frame
-            let navigation = app.navigationBars.firstMatch
-            navigationBar = navigation.exists ? navigation.frame : nil
+            // The narrowest bar is the frontmost sheet's (the screen behind a form sheet has a full-width one).
+            let bars = app.navigationBars.allElementsBoundByIndex.map(\.frame).filter { !$0.isEmpty }
+            navigationBars = bars
+            let narrowest = bars.min { $0.width < $1.width }
+            let isPad = UIDevice.current.userInterfaceIdiom == .pad
+            let first = app.navigationBars.firstMatch
+            navigationBar = isPad ? narrowest : (first.exists ? first.frame : nil)
             let tabs = app.tabBars.firstMatch
             tabBar = tabs.exists ? tabs.frame : nil
+            // A form sheet is centred vertically, so it ends as far above the window's bottom as it starts below
+            // the top.
+            if isPad, let bar = narrowest, bar.width < window.width - 1 {
+                sheet = CGRect(x: bar.minX, y: bar.minY, width: bar.width,
+                               height: max(0, window.maxY - 2 * (bar.minY - window.minY) - window.minY))
+            } else {
+                sheet = nil
+            }
         }
 
-        /// The area where content is shown on the plain background: inside the window, below the navigation bar,
-        /// above the floating tab bar.
+        /// The area where content is shown on the plain background: inside the window (or the iPad form sheet),
+        /// below the navigation bar, above the floating tab bar.
         private var contentArea: CGRect {
-            var area = window
+            var area = sheet ?? window
             if let navigationBar, navigationBar.maxY > area.minY {
                 area = CGRect(x: area.minX, y: navigationBar.maxY, width: area.width, height: area.maxY - navigationBar.maxY)
             }
@@ -70,6 +88,17 @@ final class AccessibilityAuditTests: XCTestCase {
                [.introduction, .stockSheet, .purchase, .storePicker].contains(screen) {
                 return true
             }
+            // iPad: the tab bar floats at the top and keeps its labels at a fixed size; at the largest sizes the audit
+            // reports that without an element (the content itself scales, see the screenshots).
+            if issue.auditType == .dynamicType, element == nil, UIDevice.current.userInterfaceIdiom == .pad {
+                return true
+            }
+            // iPadOS 26 only (not 27): text it cannot attribute to an element, on screens with a form sheet over
+            // dimmed content.
+            if issue.auditType == .elementDetection, element == nil, UIDevice.current.userInterfaceIdiom == .pad,
+               ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26 {
+                return true
+            }
             // Apple's semantic secondary label colour: passes at larger sizes and rises with Increase Contrast.
             if issue.auditType == .contrast, issue.compactDescription.contains("nearly passed") { return true }
             guard let element else { return false }
@@ -78,7 +107,7 @@ final class AccessibilityAuditTests: XCTestCase {
             if element.elementType == .link, element.label == "Legal" { return true }
             // The iOS 26 glass toolbar buttons: the audit samples the glass, and the system keeps bar items at a
             // fixed size (Large Content Viewer instead).
-            if let navigationBar, navigationBar.contains(frame) { return true }
+            if navigationBars.contains(where: { $0.contains(frame) }) { return true }
             // Content that runs under the floating glass tab bar or past the screen edge is measured against
             // whatever lies behind it; on screen it scrolls into the plain area.
             if issue.auditType == .contrast, !contentArea.contains(frame) { return true }
@@ -222,20 +251,36 @@ final class AccessibilityAuditTests: XCTestCase {
         _ = element.waitForExistence(timeout: 5)
         var swipes = 0
         // Swipe the list itself where there is one: a swipe on the window can land on a sheet's grabber instead.
-        let list = app.collectionViews.firstMatch
+        // On iPad a form sheet leaves the screen's own list visible behind it: take the narrowest, the sheet's.
+        var list = app.collectionViews.firstMatch
+        if UIDevice.current.userInterfaceIdiom == .pad,
+           let narrowest = app.collectionViews.allElementsBoundByIndex.filter({ !$0.frame.isEmpty })
+               .min(by: { $0.frame.width < $1.frame.width }) {
+            list = narrowest
+        }
         // Fully on screen, clear of the bottom edge: a half-visible menu row takes the tap but does not open.
         let visible = app.windows.firstMatch.frame.insetBy(dx: 0, dy: 60)
         func revealed() -> Bool { element.exists && element.isHittable && visible.contains(element.frame) }
+        var lastFrame: CGRect?
         while !revealed() && swipes < 15 {
+            // At the end of the list the last card can stay closer to the bottom edge than the margin (iPad at the
+            // largest sizes); once a swipe no longer moves it, take it as it is.
+            if element.exists, let lastFrame, element.frame == lastFrame { return element.isHittable }
+            lastFrame = element.exists ? element.frame : nil
             if list.exists { list.swipeUp() } else { app.swipeUp() }
             swipes += 1
         }
         return revealed()
     }
 
+    /// The tab bar on iPhone; on iPad the sections are sidebar cells (as `openTab`).
     @MainActor
     private func tapTab(_ label: String, in app: XCUIApplication) -> Bool {
-        let tab = app.tabBars.buttons[label]
+        var tab = app.tabBars.buttons[label]
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let cell = app.cells[label]
+            tab = cell.waitForExistence(timeout: 10) ? cell : app.buttons[label].firstMatch
+        }
         guard tab.waitForExistence(timeout: 10) else { return false }
         tab.tap()
         return true
@@ -265,8 +310,17 @@ final class AccessibilityAuditTests: XCTestCase {
         guard search.waitForExistence(timeout: 5) else { return false }
         search.tap()
         search.typeText("bread")
-        app.buttons["picker.row.Bread"].firstMatch.tap()
-        guard app.buttons["stock.save"].waitForExistence(timeout: 5) else { return false }
+        // The results redraw while the search settles (slower on iPad), and a tap during that is lost: try twice.
+        let bread = app.buttons["picker.row.Bread"].firstMatch
+        let save = app.buttons["stock.save"]
+        for _ in 0..<2 where !save.exists {
+            guard bread.waitForExistence(timeout: 5) else { return false }
+            let deadline = Date().addingTimeInterval(3)
+            while !bread.isHittable && Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.2)) }
+            bread.tap()
+            _ = save.waitForExistence(timeout: 5)
+        }
+        guard save.exists else { return false }
         let addLot = app.buttons["lot.add"]
         guard reveal(addLot, in: app) else { return false }
         addLot.tap()
@@ -294,6 +348,8 @@ final class AccessibilityAuditTests: XCTestCase {
             let current = field.value as? String ?? ""
             field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count) + "1")
             app.buttons["amount.confirm"].tap()
+            // iPad: the decimal pad is a popover, and the first tap outside only closes it.
+            if !field.waitForNonExistence(timeout: 3) { app.buttons["amount.confirm"].tap() }
             guard field.waitForNonExistence(timeout: 3) else { return false }
         }
         let showAll = app.buttons["history.showAll"]
@@ -318,10 +374,21 @@ final class AccessibilityAuditTests: XCTestCase {
             guard openStockSheet(in: app) else { return false }
             let storeMenu = app.buttons["store.menu"].firstMatch
             guard reveal(storeMenu, in: app) else { return false }
+            RunLoop.current.run(until: Date().addingTimeInterval(1))     // a tap while the scroll settles only stops it
+            // A lazy row can be rebuilt while the scroll settles (iPad sheet at the largest sizes): find it again.
+            if !storeMenu.exists { guard reveal(storeMenu, in: app) else { return false } }
             // The row-wide accessibility frame of a Form control: tap the value near the trailing edge (at the
             // largest sizes it sits under the title), not the frame's empty centre.
-            storeMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.7)).tap()
+            // iPhone: the value near the trailing edge; iPad: the row's centre (the trailing point misses there).
+            // The other point is the fallback.
+            let valuePoint = storeMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.7))
+            let centre = storeMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let points = UIDevice.current.userInterfaceIdiom == .pad ? [centre, valuePoint] : [valuePoint, centre]
             let other = app.buttons["Other store…"]
+            for point in points where !other.exists {
+                point.tap()
+                _ = other.waitForExistence(timeout: 3)
+            }
             guard other.waitForExistence(timeout: 5) else {
                 attachScreenshot(app, named: "storePicker-menu-without-other")
                 return false
