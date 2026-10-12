@@ -10,6 +10,7 @@ struct ListManagerSheet: View {
     @State private var pendingDelete: ShoppingListsModel.Summary?
     @State private var editMode: EditMode = .active
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         NavigationStack {
@@ -54,20 +55,31 @@ struct ListManagerSheet: View {
         }
     }
 
+    /// At the accessibility sizes the "N to buy" line goes under the name and the decorative chevron is left out:
+    /// the edit-mode delete button and drag handle leave too little width (the name broke letter by letter).
     private func row(_ summary: ShoppingListsModel.Summary) -> some View {
-        HStack(spacing: 12) {
+        let stacked = dynamicTypeSize.isAccessibilitySize
+        let texts = stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+                            : AnyLayout(HStackLayout(spacing: 8))
+        return HStack(spacing: 12) {
             Circle().fill(ListColor.color(summary.color)).frame(width: 12, height: 12).accessibilityHidden(true)
-            Text(verbatim: summary.name).foregroundStyle(.primary)
-            Spacer(minLength: 8)
-            AttributionCaption(ids: [summary.id]) {
-                Text("shopping.lists.remaining \(summary.remaining)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            texts {
+                Text(verbatim: summary.name).foregroundStyle(.primary)
+                if !stacked { Spacer(minLength: 0) }
+                AttributionCaption(ids: [summary.id]) {
+                    Text("shopping.lists.remaining \(summary.remaining)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
-            Image(systemName: "chevron.forward")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
+            if stacked {
+                Spacer(minLength: 0)
+            } else {
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
         }
         .contentShape(Rectangle())
     }

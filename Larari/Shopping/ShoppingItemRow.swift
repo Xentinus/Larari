@@ -51,7 +51,7 @@ struct ShoppingItemCard: View {
     }
 
     /// `.titleAndIcon` on purpose: inside the Shopping `List` the default style is the list-cell one, with an icon
-    /// column and a minimum row height.
+    /// column and a minimum row height. One line, except at the accessibility sizes, where the name wraps.
     @ViewBuilder private var place: some View {
         if showsList {
             Label {
@@ -61,14 +61,14 @@ struct ShoppingItemCard: View {
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            .lineLimit(1)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
             .labelStyle(.titleAndIcon)
         } else if let store = row.storeName {
             Label { Text(verbatim: directory.compactName(ofStore: row.storeID) ?? store) }
                 icon: { Image(systemName: "storefront") }
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 .labelStyle(.titleAndIcon)
         }
     }
