@@ -34,7 +34,7 @@ struct IntroductionView: View {
                     } label: {
                         Text("intro.getStarted").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .prominentButtonStyle()
                     .accessibilityIdentifier("introduction.getStarted")
                 } else {
                     Button {

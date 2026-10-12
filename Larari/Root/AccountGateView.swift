@@ -28,13 +28,13 @@ struct AccountGateView: View {
         } actions: {
             if offersRetry {
                 Button("gate.retry", action: retry)
-                    .buttonStyle(.borderedProminent)
+                    .prominentButtonStyle()
             }
             if offersSettings {
                 Button("gate.openSettings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButtonStyle()
             }
         }
     }

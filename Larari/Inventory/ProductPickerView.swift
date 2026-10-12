@@ -70,7 +70,7 @@ struct ProductPickerView: View {
                 } actions: {
                     if model.canCreate {
                         Button("add.product") { newProduct = NewProduct(name: nil, barcode: nil) }
-                            .buttonStyle(.borderedProminent)
+                            .prominentButtonStyle()
                     }
                 }
             }

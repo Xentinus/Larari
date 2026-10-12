@@ -107,7 +107,7 @@ struct SearchView: View {
                     } actions: {
                         if model.canEdit {
                             Button("search.createProduct") { creatingProduct = code }
-                                .buttonStyle(.borderedProminent)
+                                .prominentButtonStyle()
                                 .accessibilityIdentifier("search.createProduct")
                         }
                     }

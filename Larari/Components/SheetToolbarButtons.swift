@@ -21,5 +21,6 @@ struct SheetConfirmButton: View {
     var body: some View {
         Button(role: .confirm, action: action) { Label(title, systemImage: "checkmark") }
             .labelStyle(.iconOnly)
+            .foregroundStyle(Color.onAccent)          // readable on the light dark-mode tint (X-04 pick A)
     }
 }

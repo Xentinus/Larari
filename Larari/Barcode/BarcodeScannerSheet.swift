@@ -28,14 +28,14 @@ struct BarcodeScannerSheet: View {
                 case .needsPermission:
                     explanation("barcode.permission.message", symbol: "camera") {
                         Button("barcode.permission.allow") { Task { await requestAccess() } }
-                            .buttonStyle(.borderedProminent)
+                            .prominentButtonStyle()
                     }
                 case .denied:
                     explanation("barcode.denied.message", symbol: "camera.fill") {
                         Button("barcode.openSettings") {
                             if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .prominentButtonStyle()
                     }
                 case .restricted:
                     explanation("barcode.restricted.message", symbol: "lock") { EmptyView() }

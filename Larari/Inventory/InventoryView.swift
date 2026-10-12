@@ -96,7 +96,7 @@ struct InventoryView: View {
                 } actions: {
                     if model.canEdit {
                         Button("inventory.addStock") { addingStock = true }
-                            .buttonStyle(.borderedProminent)
+                            .prominentButtonStyle()
                     }
                 }
             }

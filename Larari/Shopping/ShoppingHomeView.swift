@@ -187,7 +187,7 @@ struct ShoppingHomeView: View {
                 Text("shopping.lists.empty.message")
             } actions: {
                 Button("shopping.lists.new") { listEditor = .create }
-                    .buttonStyle(.borderedProminent)
+                    .prominentButtonStyle()
             }
         } else {
             // Built once per render: `model.sections` regroups every row, and the headers and the index share it.
@@ -245,7 +245,7 @@ struct ShoppingHomeView: View {
                 Text("shopping.detail.empty.message")
             } actions: {
                 Button("add.shoppingItem") { adding = AddRequest(preselected: model.filter) }
-                    .buttonStyle(.borderedProminent)
+                    .prominentButtonStyle()
             }
         } else {
             ContentUnavailableView {
@@ -254,7 +254,7 @@ struct ShoppingHomeView: View {
                 Text("shopping.home.done.message")
             } actions: {
                 Button("add.shoppingItem") { adding = AddRequest(preselected: nil) }
-                    .buttonStyle(.borderedProminent)
+                    .prominentButtonStyle()
             }
         }
     }

@@ -34,7 +34,7 @@ struct BackupReminderBanner: View {
 
     @ViewBuilder private var buttons: some View {
         ArchiveExportButton(space: space) { Text("backup.banner.export") }
-            .buttonStyle(.borderedProminent)
+            .prominentButtonStyle()
         Button("backup.banner.dismiss") { reminder.dismiss() }
             .buttonStyle(.bordered)
     }

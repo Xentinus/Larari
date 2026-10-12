@@ -358,7 +358,7 @@ private struct StorePickerCard: View {
         } label: {
             Text("store.chooseSelected")
         }
-        .buttonStyle(.borderedProminent)
+        .prominentButtonStyle()
         .accessibilityIdentifier("store.chooseSelected")
     }
 
