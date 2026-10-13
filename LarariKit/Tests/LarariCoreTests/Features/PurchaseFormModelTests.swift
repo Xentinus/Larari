@@ -162,4 +162,34 @@ struct PurchaseFormModelTests {
         #expect(record.shoppingLocation?.name == "Aldi Nyugati")
         #expect(try stack.count(InventoryItem.self) == 0)
     }
+
+    @Test func theSettingOffStartsWithoutInventoryAndStillRecordsTheProductPurchase() throws {
+        let milk = try stack.makeProduct("Tej", unit: .liter)
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let item = try stack.service.addItem(to: list, product: milk, quantity: 2)
+        let model = PurchaseFormModel(item: item, shopping: stack.service, inventory: stack.inventory,
+                                      locations: locations, pending: stack.pending, locale: locale,
+                                      addsToInventoryByDefault: false)
+        #expect(!model.addToInventory)
+        #expect(model.quantityText == "2" && model.quantity == 2)
+        #expect(model.recordsPurchase)
+        model.priceText = "900"
+        try #require(model.purchase()).commit()
+        #expect(try stack.service.items(in: list).isEmpty)
+        #expect(try stack.count(InventoryItem.self) == 0)
+        let record = try #require(try stack.context.fetch(NSFetchRequest<PurchaseRecord>(entityName: "PurchaseRecord")).first)
+        #expect(record.price == 900)
+    }
+
+    @Test func theSettingOffStillLetsOnePurchaseGoIntoInventory() throws {
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let item = try stack.service.addItem(to: list, customName: "Alma", quantity: 3)
+        let model = PurchaseFormModel(item: item, shopping: stack.service, inventory: stack.inventory,
+                                      locations: locations, pending: stack.pending, locale: locale,
+                                      addsToInventoryByDefault: false)
+        model.addToInventory = true
+        #expect(model.lots.lotCount == 1 && model.lots.lots[0].quantityText == "3")
+        try #require(model.purchase()).commit()
+        #expect(try stack.count(InventoryItem.self) == 1)
+    }
 }

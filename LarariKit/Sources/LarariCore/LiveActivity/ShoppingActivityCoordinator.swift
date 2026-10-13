@@ -31,6 +31,7 @@ public final class ShoppingActivityCoordinator {
     @ObservationIgnored private let inventory: InventoryService
     @ObservationIgnored private let locations: ShoppingLocationService
     @ObservationIgnored private let pending: PendingDeletions
+    @ObservationIgnored private let purchaseDefaults: PurchaseDefaults
     @ObservationIgnored private let controller: any LiveActivityControlling
     @ObservationIgnored private let memory: ShoppingActivityMemory
     @ObservationIgnored private let locale: Locale
@@ -39,7 +40,8 @@ public final class ShoppingActivityCoordinator {
 
     public init(shopping: ShoppingService, inventory: InventoryService, pending: PendingDeletions,
                 controller: any LiveActivityControlling, memory: ShoppingActivityMemory, locale: Locale = .current,
-                now: @escaping () -> Date = { Date() }, debounce: Duration = .milliseconds(500)) {
+                now: @escaping () -> Date = { Date() }, debounce: Duration = .milliseconds(500),
+                purchaseDefaults: PurchaseDefaults = PurchaseDefaults(defaults: .standard)) {
         self.shopping = shopping
         self.inventory = inventory
         locations = ShoppingLocationService(spaceStore: shopping.spaceStore, context: shopping.context,
@@ -50,6 +52,7 @@ public final class ShoppingActivityCoordinator {
         self.locale = locale
         self.now = now
         self.debounce = debounce
+        self.purchaseDefaults = purchaseDefaults
     }
 
     // MARK: Entry points
@@ -150,7 +153,7 @@ public final class ShoppingActivityCoordinator {
         await reconcile()
         // A read-only household or a vanished item buys nothing; the refresh shows the real state either way.
         _ = try? ShoppingActivityActions.purchase(itemIDs: itemIDs, shopping: shopping, inventory: inventory,
-                                                  pending: pending)
+                                                  pending: pending, addToInventory: purchaseDefaults.addsToInventory)
         await refreshNow()
     }
 

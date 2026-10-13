@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 /// The purchase sheet: how much was bought, whether the rest stays on the list, and whether it goes into
-/// inventory (default on). With inventory, the amount is the lots, each with its own storage location and expiry
+/// inventory (on unless Settings ▸ Larari says otherwise, P4-07). With inventory, the amount is the lots, each with its own storage location and expiry
 /// (P2-08a); the store comes from the store menu and the paid total is split across the lots. Undoable.
 @MainActor
 @Observable
@@ -13,7 +13,8 @@ public final class PurchaseFormModel {
     /// The amount while inventory is off.
     public var quantityText: String
     public var keepRemainder = true
-    /// On by default; off, the item only leaves the list (user decision, 2026-09-25).
+    /// Starts from the "Add purchases to inventory" setting (on by default, user decision 2026-09-25; P4-07); off,
+    /// the item only leaves the list.
     public var addToInventory = true {
         didSet {
             guard addToInventory != oldValue else { return }
@@ -37,7 +38,8 @@ public final class PurchaseFormModel {
     @ObservationIgnored private let locale: Locale
 
     public init(item: ShoppingListItem, shopping: ShoppingService, inventory: InventoryService,
-                locations: ShoppingLocationService, pending: PendingDeletions, locale: Locale = .current) {
+                locations: ShoppingLocationService, pending: PendingDeletions, locale: Locale = .current,
+                addsToInventoryByDefault: Bool = true) {
         self.item = item
         self.shopping = shopping
         self.inventory = inventory
@@ -47,6 +49,7 @@ public final class PurchaseFormModel {
         listedQuantity = item.quantity
         unit = item.unit
         quantityText = Quantity.formatNumber(item.quantity, locale: locale)
+        addToInventory = addsToInventoryByDefault                // no didSet inside init: the lots start listed too
         currency = inventory.defaultCurrency
         let space = item.shoppingList?.space
         var options: [PickerOption] = []

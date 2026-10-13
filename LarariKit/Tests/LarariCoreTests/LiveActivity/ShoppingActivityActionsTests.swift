@@ -9,9 +9,10 @@ struct ShoppingActivityActionsTests {
     let stack: ShoppingTestStack
     init() throws { stack = try ShoppingTestStack() }
 
-    func buy(_ ids: [UUID], shopping: ShoppingService? = nil) throws -> Int {
+    func buy(_ ids: [UUID], shopping: ShoppingService? = nil, addToInventory: Bool = true) throws -> Int {
         try ShoppingActivityActions.purchase(itemIDs: ids, shopping: shopping ?? stack.service,
-                                             inventory: stack.inventory, pending: stack.pending)
+                                             inventory: stack.inventory, pending: stack.pending,
+                                             addToInventory: addToInventory)
     }
 
     func stock() throws -> [InventoryItem] {
@@ -85,5 +86,14 @@ struct ShoppingActivityActionsTests {
                                                        context: stack.context))
         #expect(ShoppingActivityActions.involvesStore(sharedStore, itemIDs: [personal.publicId, shared.publicId],
                                                       context: stack.context))
+    }
+
+    @Test func withoutInventoryTheItemOnlyLeavesTheList() throws {
+        let milk = try stack.makeProduct("Tej", unit: .liter)
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let item = try stack.service.addItem(to: list, product: milk, quantity: 2)
+        #expect(try buy([item.publicId], addToInventory: false) == 1)
+        #expect(try stack.count(ShoppingListItem.self) == 0)
+        #expect(try stock().isEmpty)
     }
 }

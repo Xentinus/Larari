@@ -18,14 +18,16 @@ struct WidgetSnapshotCoordinatorTests {
     init() throws { stack = try ShoppingTestStack() }
 
     func coordinator(observesSaves: Bool = false, shopping: ShoppingService? = nil,
-                     activated: Bool = true) -> WidgetSnapshotCoordinator {
+                     activated: Bool = true, addsToInventory: Bool = true) -> WidgetSnapshotCoordinator {
+        let purchaseDefaults = PurchaseDefaults(defaults: UserDefaults(suiteName: "test.wsc.\(UUID().uuidString)")!)
+        purchaseDefaults.addsToInventory = addsToInventory
         let clock = stack.now, counter = reloads
         let coordinator = WidgetSnapshotCoordinator(context: stack.context, spaceStore: stack.spaceStore,
                                          shopping: shopping ?? stack.service,
                                          inventory: stack.inventory, pending: stack.pending, store: store, queue: queue,
                                          reload: { counter.count += 1 }, now: { clock.date }, calendar: .current,
                                          locale: Locale(identifier: "en_US"), debounce: .zero,
-                                         observesSaves: observesSaves)
+                                         observesSaves: observesSaves, purchaseDefaults: purchaseDefaults)
         if activated { coordinator.activate() }
         return coordinator
     }
@@ -231,5 +233,17 @@ struct WidgetSnapshotCoordinatorTests {
         coordinator.activate()
         #expect(coordinator.drainTicks() == 1)
         #expect(try stack.service.unpurchasedItems(in: list).isEmpty)
+    }
+
+    @Test func withTheSettingOffATickOnlyTakesTheItemOffTheList() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let list = try stack.service.createList(name: "Heti", in: stack.space)
+        let milk = try stack.service.addItem(to: list, customName: "Tej")
+        try queue.append(QueuedTick(itemID: milk.publicId, listID: list.publicId, queuedAt: stack.now.date))
+
+        #expect(coordinator(addsToInventory: false).drainTicks() == 1)
+
+        #expect(try stack.service.unpurchasedItems(in: list).isEmpty)
+        #expect(try stack.count(InventoryItem.self) == 0)
     }
 }

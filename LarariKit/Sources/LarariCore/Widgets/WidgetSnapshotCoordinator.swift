@@ -24,6 +24,7 @@ public final class WidgetSnapshotCoordinator {
     private let shopping: ShoppingService
     private let inventory: InventoryService
     private let pending: PendingDeletions
+    private let purchaseDefaults: PurchaseDefaults
     private let store: WidgetSnapshotStore
     private let queue: WidgetTickQueue
     private let reload: @MainActor () -> Void
@@ -37,12 +38,13 @@ public final class WidgetSnapshotCoordinator {
                 inventory: InventoryService, pending: PendingDeletions, store: WidgetSnapshotStore,
                 queue: WidgetTickQueue, reload: @escaping @MainActor () -> Void, now: @escaping () -> Date = { Date() },
                 calendar: Calendar = .current, locale: Locale = .current, debounce: Duration = .milliseconds(500),
-                observesSaves: Bool = true) {
+                observesSaves: Bool = true, purchaseDefaults: PurchaseDefaults = PurchaseDefaults(defaults: .standard)) {
         self.context = context
         self.spaceStore = spaceStore
         self.shopping = shopping
         self.inventory = inventory
         self.pending = pending
+        self.purchaseDefaults = purchaseDefaults
         self.store = store
         self.queue = queue
         self.reload = reload
@@ -88,7 +90,7 @@ public final class WidgetSnapshotCoordinator {
         }
     }
 
-    /// Buys what the extension queued (N-04's tick, same choices), then rewrites the snapshot. Returns how many
+    /// Buys what the extension queued (N-04's tick, same choices, inventory as the P4-07 setting says), then rewrites the snapshot. Returns how many
     /// items were bought. A tick whose item is gone or already bought is dropped. A tick that fails (a read-only
     /// household, or the share-permission cache of joined households that fails closed until it is refreshed after
     /// launch) goes back into the queue while it is less than 24 hours old, so an early drain loses nothing. Before
@@ -103,7 +105,8 @@ public final class WidgetSnapshotCoordinator {
         for tick in ticks {
             do {
                 bought += try ShoppingActivityActions.purchase(itemIDs: [tick.itemID], shopping: shopping,
-                                                               inventory: inventory, pending: pending)
+                                                               inventory: inventory, pending: pending,
+                                                               addToInventory: purchaseDefaults.addsToInventory)
             } catch {
                 if current.timeIntervalSince(tick.queuedAt) < Self.tickLifetime { try? queue.append(tick) }
             }

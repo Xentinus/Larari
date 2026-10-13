@@ -382,4 +382,18 @@ struct ShoppingActivityCoordinatorTests {
         #expect(controller.updateStaleDates
             == [stack.now.date.addingTimeInterval(ShoppingActivityCoordinator.staleInterval)])
     }
+
+    @Test func withTheSettingOffATickAddsNoStock() async throws {
+        let purchaseDefaults = PurchaseDefaults(defaults: UserDefaults(suiteName: "test.sac.\(UUID().uuidString)")!)
+        purchaseDefaults.addsToInventory = false
+        let clock = stack.now
+        let offCoordinator = ShoppingActivityCoordinator(shopping: stack.service, inventory: stack.inventory,
+                                                         pending: stack.pending, controller: controller, memory: memory,
+                                                         locale: Locale(identifier: "hu_HU"), now: { clock.date },
+                                                         debounce: .zero, purchaseDefaults: purchaseDefaults)
+        let milk = try add("Tej")
+        await offCoordinator.tick(itemIDs: [milk.publicId])
+        #expect(try stack.service.unpurchasedItems(in: weekly).isEmpty)
+        #expect(try stack.count(InventoryItem.self) == 0)
+    }
 }

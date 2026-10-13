@@ -28,6 +28,8 @@ public final class ServiceContainer {
     public let storeReminders: StoreReminderCoordinator
     /// The shopping Live Activity (N-04); switched off (`NoLiveActivities`) unless the app passes ActivityKit.
     public let shoppingActivity: ShoppingActivityCoordinator
+    /// Whether purchases go into inventory by default (P4-07): the purchase sheet and both ticks read it.
+    public let purchaseDefaults: PurchaseDefaults
     /// The widgets' App Group snapshot (N-05). Nil in local mode, under UI tests and in package tests.
     public let widgetSnapshots: WidgetSnapshotCoordinator?
     /// Export and import. Nil only in package tests that build the container without persistence.
@@ -59,7 +61,8 @@ public final class ServiceContainer {
                 shoppingActivityDefaults: UserDefaults = .standard,
                 widgetStore: WidgetSnapshotStore? = nil,
                 widgetQueue: WidgetTickQueue? = nil,
-                reloadWidgets: @escaping @MainActor () -> Void = {}) {
+                reloadWidgets: @escaping @MainActor () -> Void = {},
+                purchaseDefaults: PurchaseDefaults = PurchaseDefaults(defaults: .standard)) {
         let pending = PendingDeletions()
         pendingDeletions = pending
         // When sharing is given, its permission check is every service's canEdit (read-only households).
@@ -97,6 +100,7 @@ public final class ServiceContainer {
         storeDirectory = StoreDirectory(context: context, cache: storeAddressCache, resolver: storeAddresses,
                                         location: locationAuthorizer)
         self.storeSearch = storeSearch
+        self.purchaseDefaults = purchaseDefaults
         notifications = ExpiryNotificationCoordinator(
             context: context, center: notificationCenter,
             locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"))
@@ -108,12 +112,14 @@ public final class ServiceContainer {
             shopping: shoppingService, inventory: inventoryService, pending: pending,
             controller: liveActivities ?? NoLiveActivities(),
             memory: ShoppingActivityMemory(defaults: shoppingActivityDefaults),
-            locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"))
+            locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"),
+            purchaseDefaults: purchaseDefaults)
         if let widgetStore, let widgetQueue {
             widgetSnapshots = WidgetSnapshotCoordinator(
                 context: context, spaceStore: spaceStore, shopping: shoppingService, inventory: inventoryService,
                 pending: pending, store: widgetStore, queue: widgetQueue, reload: reloadWidgets,
-                locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"))
+                locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"),
+                purchaseDefaults: purchaseDefaults)
         } else {
             widgetSnapshots = nil
         }
