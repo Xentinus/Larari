@@ -47,6 +47,28 @@ final class ShoppingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["shopping.item.Napkins"].waitForExistence(timeout: 3))
     }
 
+    /// P4-07: with Settings ▸ Larari ▸ "Add purchases to inventory" off the sheet starts off and the item only leaves
+    /// the list.
+    @MainActor
+    func testPurchaseStartsWithoutInventoryWhenTheSettingIsOff() {
+        let app = XCUIApplication.launchedOnShoppingTab(
+            extraArguments: ["-uiTestSeedStoreItems", "-purchaseAddsToInventory", "NO"])
+        let soap = app.buttons["shopping.item.Soap"]
+        XCTAssertTrue(soap.waitForExistence(timeout: 10))
+        soap.tap()
+        let inventory = app.switches["shopping.purchase.addToInventory"]
+        XCTAssertTrue(inventory.waitForExistence(timeout: 5))
+        XCTAssertEqual(inventory.value as? String, "0", "the setting is off")
+        XCTAssertFalse(app.textFields["lot.1.quantity"].exists, "no lot rows without inventory")
+        app.buttons["shopping.purchase.confirm"].tap()
+        XCTAssertTrue(soap.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Undo"].waitForNonExistence(timeout: 15), "the purchase is committed")
+
+        app.openTab("Inventory")
+        XCTAssertTrue(app.buttons["inventory.row.Bread"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["inventory.row.Soap"].exists, "nothing went into inventory")
+    }
+
     @MainActor
     func testCardOpensThePurchaseSheetAndKeepsTheRemainder() {
         let app = XCUIApplication.launchedOnShoppingTab()

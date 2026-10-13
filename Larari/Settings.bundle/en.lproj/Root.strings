@@ -1,3 +1,5 @@
 "STORE_GROUP" = "Shopping";
 "STORE_TOGGLE" = "Store reminders";
 "STORE_FOOTER" = "When you arrive at a shop of a chain with items waiting on your list, Larari reminds you. Your location stays on this iPhone.";
+"INVENTORY_TOGGLE" = "Add purchases to inventory";
+"INVENTORY_FOOTER" = "Off: a bought item only leaves the list. You can still add a single purchase to inventory.";

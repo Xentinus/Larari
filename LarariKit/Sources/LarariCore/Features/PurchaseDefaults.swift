@@ -14,7 +14,8 @@ public struct PurchaseDefaults {
     }
 
     public var addsToInventory: Bool {
-        get { defaults.object(forKey: Self.key) as? Bool ?? true }
+        // `bool(forKey:)` also reads "NO" from a launch argument; only a missing value means on.
+        get { defaults.object(forKey: Self.key) == nil ? true : defaults.bool(forKey: Self.key) }
         nonmutating set { defaults.set(newValue, forKey: Self.key) }
     }
 }

@@ -1,7 +1,7 @@
 import LarariCore
 import SwiftUI
 
-/// Tapping an item card: whether it goes into inventory (default on), how much was bought (with inventory, as
+/// Tapping an item card: whether it goes into inventory (as Settings ▸ Larari says, on by default, P4-07), how much was bought (with inventory, as
 /// lots with their own storage location and expiry, P2-08a), whether the rest stays on the list, and from where
 /// and for how much, which is recorded for the price trend. The store comes from the store menu (the nearest shop
 /// is suggested) and the paid total is split across the lots.
@@ -19,7 +19,8 @@ struct PurchaseSheet: View {
         _model = State(initialValue: PurchaseFormModel(item: item, shopping: services.shopping,
                                                        inventory: services.inventory,
                                                        locations: services.shoppingLocations,
-                                                       pending: services.pendingDeletions))
+                                                       pending: services.pendingDeletions,
+                                                       addsToInventoryByDefault: services.purchaseDefaults.addsToInventory))
     }
 
     var body: some View {

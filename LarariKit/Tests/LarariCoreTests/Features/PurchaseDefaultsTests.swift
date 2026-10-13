@@ -20,6 +20,14 @@ struct PurchaseDefaultsTests {
         #expect(PurchaseDefaults(defaults: defaults).addsToInventory)
     }
 
+    /// A launch argument (`-purchaseAddsToInventory NO`) arrives as a string in the argument domain.
+    @Test func readsAStringFromTheArgumentDomain() {
+        defaults.set("NO", forKey: PurchaseDefaults.key)
+        #expect(!PurchaseDefaults(defaults: defaults).addsToInventory)
+        defaults.set("YES", forKey: PurchaseDefaults.key)
+        #expect(PurchaseDefaults(defaults: defaults).addsToInventory)
+    }
+
     @Test func writesTheSwitch() {
         let purchase = PurchaseDefaults(defaults: defaults)
         purchase.addsToInventory = false

@@ -1,3 +1,5 @@
 "STORE_GROUP" = "Bevásárlás";
 "STORE_TOGGLE" = "Bolti emlékeztető";
 "STORE_FOOTER" = "Ha egy olyan áruházlánc boltjához érsz, amelyhez tétel vár a listádon, a Larari szól. A helyzeted az iPhone-on marad.";
+"INVENTORY_TOGGLE" = "Vásárlás a készletbe";
+"INVENTORY_FOOTER" = "Kikapcsolva a megvett tétel csak lekerül a listáról. Egy-egy vásárlásnál így is beteheted a készletbe.";

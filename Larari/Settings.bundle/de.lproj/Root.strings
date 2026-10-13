@@ -1,3 +1,5 @@
 "STORE_GROUP" = "Einkaufen";
 "STORE_TOGGLE" = "Erinnerung im Geschäft";
 "STORE_FOOTER" = "Wenn du ein Geschäft einer Kette erreichst, für die Artikel auf deiner Liste warten, erinnert dich Larari. Dein Standort bleibt auf diesem iPhone.";
+"INVENTORY_TOGGLE" = "Einkäufe in den Bestand";
+"INVENTORY_FOOTER" = "Aus: Ein gekaufter Artikel verschwindet nur von der Liste. Einzelne Einkäufe kannst du trotzdem in den Bestand übernehmen.";

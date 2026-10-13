@@ -156,6 +156,9 @@ final class AppModel {
         if UITestHooks.resetIntroduction {
             UserDefaults.standard.removeObject(forKey: IntroductionModel.defaultsKey)
         }
+        // A UI test that answered the introduction's purchase question must not leak into the next test; the
+        // argument domain (`-purchaseAddsToInventory NO`) still overrides this.
+        if UITestHooks.isActive { UserDefaults.standard.removeObject(forKey: PurchaseDefaults.key) }
         notifications = UITestHooks.isActive ? UITestNotificationAuthorizer() : UserNotificationAuthorizer()
         #else
         notifications = UserNotificationAuthorizer()
@@ -312,7 +315,8 @@ final class AppModel {
                                          liveActivities: Self.liveActivityController,
                                          shoppingActivityDefaults: Self.shoppingActivityDefaults,
                                          widgetStore: widgets?.store, widgetQueue: widgets?.queue,
-                                         reloadWidgets: { WidgetCenter.shared.reloadAllTimelines() })
+                                         reloadWidgets: { WidgetCenter.shared.reloadAllTimelines() },
+                                         purchaseDefaults: PurchaseDefaults(defaults: .standard))
         #if DEBUG
         if UITestHooks.isSeeded {
             try? await UITestSeed.populate(container, in: personalSpace)
