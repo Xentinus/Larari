@@ -156,9 +156,6 @@ final class AppModel {
         if UITestHooks.resetIntroduction {
             UserDefaults.standard.removeObject(forKey: IntroductionModel.defaultsKey)
         }
-        // A UI test that answered the introduction's purchase question must not leak into the next test; the
-        // argument domain (`-purchaseAddsToInventory NO`) still overrides this.
-        if UITestHooks.isActive { UserDefaults.standard.removeObject(forKey: PurchaseDefaults.key) }
         notifications = UITestHooks.isActive ? UITestNotificationAuthorizer() : UserNotificationAuthorizer()
         #else
         notifications = UserNotificationAuthorizer()
@@ -166,7 +163,8 @@ final class AppModel {
         self.init(persistence: persistence,
                   accountProvider: provider,
                   defaults: defaults,
-                  introduction: IntroductionModel(notifications: notifications))
+                  introduction: IntroductionModel(notifications: notifications,
+                                                  purchaseDefaults: PurchaseDefaults(defaults: Self.purchaseDefaultsStore)))
     }
 
     #if CLOUDKIT_ENABLED
@@ -286,6 +284,20 @@ final class AppModel {
         return appDefaults
     }
 
+    /// "Add purchases to inventory" (P4-07): the app defaults, which Settings ▸ Larari writes, or under UI tests a suite
+    /// wiped once per launch, so a test's introduction answer never reaches the next test or the real app's setting.
+    /// The argument domain (`-purchaseAddsToInventory NO`) is read through either.
+    static let purchaseDefaultsStore: UserDefaults = {
+        #if DEBUG
+        if UITestHooks.isActive {
+            let suite = "uiTest.purchase"
+            UserDefaults.standard.removePersistentDomain(forName: suite)
+            return UserDefaults(suiteName: suite) ?? .standard
+        }
+        #endif
+        return .standard
+    }()
+
     /// Builds the one `ServiceContainer` (and applies the UI-test seed) after the Personal space is bootstrapped.
     func buildServices() async {
         guard services == nil, !isBuildingServices,
@@ -316,7 +328,7 @@ final class AppModel {
                                          shoppingActivityDefaults: Self.shoppingActivityDefaults,
                                          widgetStore: widgets?.store, widgetQueue: widgets?.queue,
                                          reloadWidgets: { WidgetCenter.shared.reloadAllTimelines() },
-                                         purchaseDefaults: PurchaseDefaults(defaults: .standard))
+                                         purchaseDefaults: PurchaseDefaults(defaults: Self.purchaseDefaultsStore))
         #if DEBUG
         if UITestHooks.isSeeded {
             try? await UITestSeed.populate(container, in: personalSpace)

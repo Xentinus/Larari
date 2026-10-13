@@ -37,14 +37,18 @@ struct IntroductionPageView: View {
     @Binding var addsToInventory: Bool
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
+    /// The purchase page is the longest: scrolled to the end, its hint clears the page dots drawn over the page.
+    private var bottomMargin: CGFloat { page == .purchase ? 40 : 0 }
+
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
                 layout
                     .padding(.horizontal, 24)
-                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height - bottomMargin)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .contentMargins(.bottom, bottomMargin, for: .scrollContent)
         }
     }
 

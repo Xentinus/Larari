@@ -35,8 +35,9 @@ final class AccessibilityAuditTests: XCTestCase {
         /// Every navigation bar on screen (a sheet's and the screen's behind it).
         let navigationBars: [CGRect]
         let tabBar: CGRect?
-        /// The introduction's page dots and Next button: its pages scroll under them like content under a tab bar.
-        let introductionControls: CGRect?
+        /// The introduction's page dots and Next button, each on its own: the purchase page scrolls under them like
+        /// content under a tab bar.
+        let introductionControls: [CGRect]
 
         /// On iPad a sheet is a form sheet in the middle of the window: its own bounds are the visible area.
         let sheet: CGRect?
@@ -56,7 +57,7 @@ final class AccessibilityAuditTests: XCTestCase {
             tabBar = tabs.exists ? tabs.frame : nil
             let dots = app.pageIndicators.firstMatch
             let next = app.buttons["introduction.next"]
-            introductionControls = [dots, next].filter(\.exists).map(\.frame).reduce(nil as CGRect?) { $0?.union($1) ?? $1 }
+            introductionControls = [dots, next].filter(\.exists).map(\.frame)
             // A form sheet is centred vertically, so it ends as far above the window's bottom as it starts below
             // the top.
             if isPad, let bar = narrowest, bar.width < window.width - 1 {
@@ -77,9 +78,6 @@ final class AccessibilityAuditTests: XCTestCase {
             if let tabBar, tabBar.minY < area.maxY {
                 area.size.height = max(0, tabBar.minY - area.minY)
             }
-            if let introductionControls, introductionControls.minY < area.maxY {
-                area.size.height = max(0, introductionControls.minY - area.minY)
-            }
             return area
         }
 
@@ -90,9 +88,10 @@ final class AccessibilityAuditTests: XCTestCase {
             // The Shopping filter strip scrolls sideways at the largest sizes, so its last chip runs past the edge;
             // the audit reports that clipping without an element.
             if issue.auditType == .textClipped, element == nil, screen == .shopping { return true }
-            // The introduction's purchase page (P4-07) is long at the largest sizes: its text scrolls under the page
-            // dots and Next, reported without an element. Its scene's sample card is capped at .large on purpose
-            // (P1-10a: the illustration never pushes the text off screen), also without an element.
+            // The introduction's purchase page (P4-07) at the largest sizes: its text runs on under the page dots and
+            // Next until scrolled (the bottom margin lets the end clear them), and its scene's sample card is capped
+            // at .large on purpose (P1-10a: the illustration never pushes the text off screen). Both are reported
+            // without an element.
             if [.textClipped, .dynamicType].contains(issue.auditType), element == nil, screen == .introductionPurchase {
                 return true
             }
@@ -127,6 +126,13 @@ final class AccessibilityAuditTests: XCTestCase {
             if issue.auditType == .contrast, !contentArea.contains(frame) { return true }
             // Text that runs past the screen edge or under a bar is cut by the scroll view, not by its own frame.
             if issue.auditType == .textClipped, !contentArea.contains(frame) { return true }
+            // The purchase page's text scrolled partly under the page dots or Next (the controls themselves, wholly
+            // inside that area, are still audited).
+            if screen == .introductionPurchase, [.contrast, .textClipped].contains(issue.auditType),
+               introductionControls.contains(where: { $0.intersects(frame) }),
+               !introductionControls.contains(where: { $0.contains(frame) }) {
+                return true
+            }
             // A list-row Label at accessibility sizes wraps its title under the icon, outside the frame the audit
             // reads (system Label layout; the screenshots show the whole title).
             if issue.auditType == .textClipped, wrappedLabelTitles[screen]?.contains(element.label) == true {
