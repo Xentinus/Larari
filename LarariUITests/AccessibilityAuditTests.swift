@@ -7,7 +7,7 @@ final class AccessibilityAuditTests: XCTestCase {
     enum Screen: String {
         case inventory, stockSheet, storePicker, search, productDetail, productForm, shopping, listManager, addItem, purchase,
              inventoryByName, inventoryByExpiry, shoppingByName, productHistory, categoryPicker, spaceSettings,
-             introduction, gate
+             introduction, introductionPurchase, gate
     }
 
     enum Mode: String, CaseIterable {
@@ -35,6 +35,8 @@ final class AccessibilityAuditTests: XCTestCase {
         /// Every navigation bar on screen (a sheet's and the screen's behind it).
         let navigationBars: [CGRect]
         let tabBar: CGRect?
+        /// The introduction's page dots and Next button: its pages scroll under them like content under a tab bar.
+        let introductionControls: CGRect?
 
         /// On iPad a sheet is a form sheet in the middle of the window: its own bounds are the visible area.
         let sheet: CGRect?
@@ -52,6 +54,9 @@ final class AccessibilityAuditTests: XCTestCase {
             navigationBar = isPad ? narrowest : (first.exists ? first.frame : nil)
             let tabs = app.tabBars.firstMatch
             tabBar = tabs.exists ? tabs.frame : nil
+            let dots = app.pageIndicators.firstMatch
+            let next = app.buttons["introduction.next"]
+            introductionControls = [dots, next].filter(\.exists).map(\.frame).reduce(nil as CGRect?) { $0?.union($1) ?? $1 }
             // A form sheet is centred vertically, so it ends as far above the window's bottom as it starts below
             // the top.
             if isPad, let bar = narrowest, bar.width < window.width - 1 {
@@ -72,6 +77,9 @@ final class AccessibilityAuditTests: XCTestCase {
             if let tabBar, tabBar.minY < area.maxY {
                 area.size.height = max(0, tabBar.minY - area.minY)
             }
+            if let introductionControls, introductionControls.minY < area.maxY {
+                area.size.height = max(0, introductionControls.minY - area.minY)
+            }
             return area
         }
 
@@ -82,11 +90,17 @@ final class AccessibilityAuditTests: XCTestCase {
             // The Shopping filter strip scrolls sideways at the largest sizes, so its last chip runs past the edge;
             // the audit reports that clipping without an element.
             if issue.auditType == .textClipped, element == nil, screen == .shopping { return true }
+            // The introduction's purchase page (P4-07) is long at the largest sizes: its text scrolls under the page
+            // dots and Next, reported without an element. Its scene's sample card is capped at .large on purpose
+            // (P1-10a: the illustration never pushes the text off screen), also without an element.
+            if [.textClipped, .dynamicType].contains(issue.auditType), element == nil, screen == .introductionPurchase {
+                return true
+            }
             // Text hidden on purpose: the introduction's animated scenes are decoration, and a lot row's title is
             // read as part of its control's label (LotControlRow, P2-08a). The store picker's street and place
             // names are drawn by MapKit into the map.
             if issue.auditType == .elementDetection,
-               [.introduction, .stockSheet, .purchase, .storePicker].contains(screen) {
+               [.introduction, .introductionPurchase, .stockSheet, .purchase, .storePicker].contains(screen) {
                 return true
             }
             // iPad: the tab bar floats at the top and keeps its labels at a fixed size; at the largest sizes the audit
@@ -164,6 +178,7 @@ final class AccessibilityAuditTests: XCTestCase {
     @MainActor func testPurchase() { audit(.purchase) }
     @MainActor func testSpaceSettings() { audit(.spaceSettings) }
     @MainActor func testIntroduction() { audit(.introduction) }
+    @MainActor func testIntroductionPurchase() { audit(.introductionPurchase) }
     @MainActor func testGate() { audit(.gate) }
 
     @MainActor
@@ -225,7 +240,7 @@ final class AccessibilityAuditTests: XCTestCase {
         var extra = ["-uiTestSeed"]
         switch screen {
         case .shopping, .shoppingByName, .listManager, .addItem, .purchase: extra.append("-uiTestSeedStoreItems")
-        case .introduction: extra.append("-resetIntroduction")
+        case .introduction, .introductionPurchase: extra.append("-resetIntroduction")
         default: break
         }
         if mode == .dark { extra.append("-uiTestDarkMode") }
@@ -237,7 +252,7 @@ final class AccessibilityAuditTests: XCTestCase {
             extra.append("-uiTestIncreaseContrast")
         }
         let app = XCUIApplication.larari(accountState: screen == .gate ? "noAccount" : "available",
-                                          skipIntroduction: screen != .introduction,
+                                          skipIntroduction: ![.introduction, .introductionPurchase].contains(screen),
                                           extraArguments: extra)
         app.launch()
         return app
@@ -477,6 +492,11 @@ final class AccessibilityAuditTests: XCTestCase {
             return app.buttons["space.settings.done"].exists
         case .introduction:
             return app.buttons["introduction.skip"].waitForExistence(timeout: 10)
+        case .introductionPurchase:
+            // P4-07: the purchase question, the fifth page.
+            guard app.buttons["introduction.next"].waitForExistence(timeout: 10) else { return false }
+            for _ in 0..<4 { app.buttons["introduction.next"].tap() }
+            return app.buttons["introduction.purchase.inventory"].waitForExistence(timeout: 5)
         case .gate:
             return app.descendants(matching: .any)["accountGate"].waitForExistence(timeout: 10)
         }

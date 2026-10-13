@@ -6,6 +6,8 @@ import SwiftUI
 struct IntroScene: View {
     let page: IntroductionPage
     let isActive: Bool
+    /// The purchase page's current answer (P4-07), which its scene follows.
+    var addsToInventory = true
 
     var body: some View {
         switch page {
@@ -13,6 +15,7 @@ struct IntroScene: View {
         case .free: FreeScene(isActive: isActive)
         case .inventory: InventoryScene(isActive: isActive)
         case .shopping: ShoppingScene(isActive: isActive)
+        case .purchase: PurchaseScene(isActive: isActive, addsToInventory: addsToInventory)
         case .spaces: SpacesScene(isActive: isActive)
         case .privacy: PrivacyScene(isActive: isActive)
         case .notifications: NotificationScene(isActive: isActive)
@@ -323,6 +326,59 @@ private struct MiniPurchaseSheet: View {
             value
         }
         .font(.subheadline)
+    }
+}
+
+// MARK: - P4-07 Purchase: where a ticked item goes
+
+/// The ticked milk card, then two places under it: the box (inventory) and the list. The chosen one is solid, the
+/// other one dashed and faded, so the picture follows the choice below it.
+private struct PurchaseScene: View {
+    let isActive: Bool
+    let addsToInventory: Bool
+
+    var body: some View {
+        IntroTimeline(isActive: isActive, delays: .seconds(0.2, 0.5, 0.35)) { beat in
+            VStack(spacing: 18) {
+                SampleCard(nameKey: "intro.scene.milk", place: "intro.scene.cornerShop",
+                           amount: "intro.scene.milk.buyAmount")
+                    .overlay(alignment: .topLeading) {
+                        if beat >= 2 {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.title3)
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, Palette.accent)
+                                .padding(6)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .overlay { TapMark(trigger: beat >= 1) }
+                    .frame(maxWidth: 280)
+                HStack(spacing: 48) {
+                    destination("shippingbox", chosen: addsToInventory)
+                    destination("list.bullet", chosen: !addsToInventory)
+                }
+                .opacity(beat >= 3 ? 1 : 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(Motion.settle, value: addsToInventory)
+        }
+    }
+
+    private func destination(_ symbol: String, chosen: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        return VStack(spacing: 6) {
+            Image(systemName: "arrow.down").font(.headline)
+            Image(systemName: symbol)
+                .font(.title2)
+                .frame(width: 64, height: 52)
+                .background { if chosen { Color(uiColor: .secondarySystemGroupedBackground).clipShape(shape) } }
+                .overlay { if !chosen { shape.strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])) } }
+                .shadow(color: .black.opacity(chosen ? 0.08 : 0), radius: 6, y: 2)
+        }
+        .foregroundStyle(chosen ? Palette.mochaButtonBackground : Color.secondary)
+        .opacity(chosen ? 1 : 0.55)
+        .scaleEffect(chosen ? 1.08 : 1)
     }
 }
 

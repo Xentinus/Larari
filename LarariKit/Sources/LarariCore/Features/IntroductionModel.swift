@@ -1,9 +1,10 @@
 import Foundation
 import Observation
 
-/// The seven pages of the animated introduction (spec 2026-09-26-animated-introduction-design.md), in order.
+/// The pages of the animated introduction (spec 2026-09-26-animated-introduction-design.md), in order. `purchase`
+/// asks whether purchases go into inventory by default (P4-07, I-A).
 public enum IntroductionPage: Int, CaseIterable, Identifiable, Sendable {
-    case welcome, free, inventory, shopping, spaces, privacy, notifications
+    case welcome, free, inventory, shopping, purchase, spaces, privacy, notifications
     public var id: Int { rawValue }
 }
 
@@ -15,15 +16,29 @@ public final class IntroductionModel {
 
     public private(set) var hasSeenIntroduction: Bool
     public var currentPage: IntroductionPage = .welcome
+    /// The `purchase` page's answer, written to the setting as soon as it changes, so a later swipe or "Get started"
+    /// keeps it and "Skip" before touching it writes nothing.
+    public var addsToInventory: Bool {
+        didSet {
+            guard addsToInventory != oldValue else { return }
+            purchaseDefaults.addsToInventory = addsToInventory
+        }
+    }
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let notifications: any NotificationAuthorizing
+    @ObservationIgnored private let purchaseDefaults: PurchaseDefaults
     @ObservationIgnored private var hasRequestedPermission = false
 
-    public init(defaults: UserDefaults = .standard, notifications: any NotificationAuthorizing) {
+    /// `purchaseDefaults` defaults to the same `defaults`.
+    public init(defaults: UserDefaults = .standard, notifications: any NotificationAuthorizing,
+                purchaseDefaults: PurchaseDefaults? = nil) {
         self.defaults = defaults
         self.notifications = notifications
+        let purchase = purchaseDefaults ?? PurchaseDefaults(defaults: defaults)
+        self.purchaseDefaults = purchase
         hasSeenIntroduction = defaults.bool(forKey: Self.defaultsKey)
+        addsToInventory = purchase.addsToInventory
     }
 
     public var shouldShow: Bool { !hasSeenIntroduction }

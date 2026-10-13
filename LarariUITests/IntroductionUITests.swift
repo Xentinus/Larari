@@ -4,7 +4,8 @@ import XCTest
 final class IntroductionUITests: XCTestCase {
     /// Titles after the welcome page, in order.
     private let laterTitles = ["Completely free", "Know what's at home", "Shopping made simple",
-                               "Personal and shared", "Your data is yours", "Stay ahead of expiry dates"]
+                               "When you buy something…", "Personal and shared", "Your data is yours",
+                               "Stay ahead of expiry dates"]
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -79,7 +80,7 @@ final class IntroductionUITests: XCTestCase {
     func testEveryPageFinishesItsScene() throws {
         let app = launch()
         XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
-        let names = ["welcome", "free", "inventory", "shopping", "spaces", "privacy", "notifications"]
+        let names = ["welcome", "free", "inventory", "shopping", "purchase", "spaces", "privacy", "notifications"]
         for (index, name) in names.enumerated() {
             if index > 0 {
                 app.buttons["Next"].tap()
@@ -113,5 +114,35 @@ final class IntroductionUITests: XCTestCase {
             shot.lifetime = .keepAlways
             add(shot)
         }
+    }
+
+    /// P4-07 (I-A): the page after Shopping asks whether purchases go into inventory; the answer is the purchase
+    /// sheet's default.
+    @MainActor
+    func testThePurchaseQuestionSetsThePurchaseSheetDefault() throws {
+        let app = XCUIApplication.larari(skipIntroduction: false,
+                                          extraArguments: ["-resetIntroduction", "-uiTestSeed", "-uiTestSeedStoreItems"])
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
+        for _ in 0..<4 { app.buttons["Next"].tap() }
+        XCTAssertTrue(app.staticTexts["When you buy something…"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["You can change this any time in Settings ▸ Larari."].exists)
+        let inventory = app.buttons["introduction.purchase.inventory"]
+        let listOnly = app.buttons["introduction.purchase.listOnly"]
+        XCTAssertTrue(inventory.isSelected, "into inventory is the default")
+        XCTAssertFalse(listOnly.isSelected)
+        listOnly.tap()
+        XCTAssertTrue(listOnly.isSelected)
+        XCTAssertFalse(inventory.isSelected)
+
+        while !app.buttons["Get started"].exists { app.buttons["Next"].tap() }
+        app.buttons["Get started"].tap()
+        app.openTab("Shopping")
+        let soap = app.buttons["shopping.item.Soap"]
+        XCTAssertTrue(soap.waitForExistence(timeout: 15))
+        soap.tap()
+        let toggle = app.switches["shopping.purchase.addToInventory"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "0", "the introduction's answer is the sheet's default")
     }
 }

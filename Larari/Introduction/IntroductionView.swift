@@ -9,7 +9,8 @@ struct IntroductionView: View {
     var body: some View {
         TabView(selection: $model.currentPage) {
             ForEach(IntroductionPage.allCases) { page in
-                IntroductionPageView(page: page, isActive: model.currentPage == page)
+                IntroductionPageView(page: page, isActive: model.currentPage == page,
+                                     addsToInventory: $model.addsToInventory)
                     .tag(page)
             }
         }

@@ -30,9 +30,11 @@ struct IntroductionModelTests {
     }
 
     /// P1-10a (user pick 2026-09-26): free comes right after welcome, privacy right before notifications;
-    /// notifications stays last, because Get started asks for the notification permission.
-    @Test func hasSevenPagesInSpecOrder() {
-        #expect(IntroductionPage.allCases == [.welcome, .free, .inventory, .shopping, .spaces, .privacy, .notifications])
+    /// notifications stays last, because Get started asks for the notification permission. P4-07 (I-A) asks about
+    /// purchases right after shopping.
+    @Test func hasEightPagesInSpecOrder() {
+        #expect(IntroductionPage.allCases == [.welcome, .free, .inventory, .shopping, .purchase, .spaces, .privacy,
+                                              .notifications])
     }
 
     @Test func showsOnFirstLaunch() {
@@ -102,5 +104,32 @@ struct IntroductionModelTests {
         #expect(!model.shouldShow)
         await model.finish()
         #expect(await notifications.requests == 0)
+    }
+
+    @Test func thePurchaseChoiceStartsIntoInventory() {
+        let model = IntroductionModel(defaults: freshDefaults(), notifications: FakeNotificationAuthorizer())
+        #expect(model.addsToInventory)
+    }
+
+    @Test func choosingOffTheListOnlyWritesTheSetting() async {
+        let defaults = freshDefaults()
+        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer())
+        model.addsToInventory = false
+        #expect(defaults.object(forKey: PurchaseDefaults.key) as? Bool == false)
+        await model.finish()
+        #expect(!PurchaseDefaults(defaults: defaults).addsToInventory)
+    }
+
+    @Test func skipWritesNoPurchaseSetting() {
+        let defaults = freshDefaults()
+        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer())
+        model.skip()
+        #expect(defaults.object(forKey: PurchaseDefaults.key) == nil)
+    }
+
+    @Test func thePurchaseChoiceStartsFromTheStoredSetting() {
+        let defaults = freshDefaults()
+        defaults.set(false, forKey: PurchaseDefaults.key)
+        #expect(!IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer()).addsToInventory)
     }
 }
