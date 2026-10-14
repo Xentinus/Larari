@@ -54,6 +54,8 @@ final class AppModel {
     let cloudSharing: any CloudSharing
     /// Location for the store reminders (P4-06); nil under UI tests, so they never read the position.
     private let storeLocation: CoreLocationAuthorizer?
+    /// Asks a permission the introduction's "Not now" skipped, once its switch is turned on (P1-10b, 2A).
+    let permissionFollowUp: PermissionFollowUp?
     /// iCloud sync status for the whole app lifetime (P5-05); fed by the container's event notifications.
     let syncStatus: SyncStatusModel
     /// Accepts share invitations; exists before the account check, since a cold-start invitation arrives early.
@@ -91,14 +93,13 @@ final class AppModel {
     init(persistence: PersistenceController,
          accountProvider: any AccountStatusProviding,
          defaults: UserDefaults = AppModel.appDefaults,
-         introduction: IntroductionModel) {
+         introduction: IntroductionModel,
+         storeLocation: CoreLocationAuthorizer? = nil,
+         permissionFollowUp: PermissionFollowUp? = nil) {
         self.persistence = persistence
         StoreReminderSettings.registerDefault()
-        #if DEBUG
-        storeLocation = UITestHooks.isActive ? nil : CoreLocationAuthorizer()
-        #else
-        storeLocation = CoreLocationAuthorizer()
-        #endif
+        self.storeLocation = storeLocation
+        self.permissionFollowUp = permissionFollowUp
         cloudSharing = Self.makeCloudSharing(persistence: persistence)
         shareAcceptance = ShareAcceptanceModel(persistence: persistence, cloud: cloudSharing,
                                                containerIdentifier: Self.containerIdentifier)
@@ -152,22 +153,32 @@ final class AppModel {
             fatalError("Larari could not open its stores: \(error)")
         }
         let notifications: any NotificationAuthorizing
+        let location: CoreLocationAuthorizer?
         #if DEBUG
         if UITestHooks.resetIntroduction {
             UserDefaults.standard.removeObject(forKey: IntroductionModel.defaultsKey)
         }
         notifications = UITestHooks.isActive ? UITestNotificationAuthorizer(granted: UITestHooks.grantsNotifications)
                                              : UserNotificationAuthorizer()
+        location = UITestHooks.isActive ? nil : CoreLocationAuthorizer()
         #else
         notifications = UserNotificationAuthorizer()
+        location = CoreLocationAuthorizer()
         #endif
+        let settings = Self.notificationPreferencesStore
         self.init(persistence: persistence,
                   accountProvider: provider,
                   defaults: defaults,
                   introduction: IntroductionModel(
                     notifications: notifications,
+                    location: location,
                     purchaseDefaults: PurchaseDefaults(defaults: Self.purchaseDefaultsStore),
-                    notificationPreferences: NotificationPreferences(defaults: Self.notificationPreferencesStore)))
+                    notificationPreferences: NotificationPreferences(defaults: settings),
+                    storeReminders: StoreReminderPreference(defaults: settings),
+                    followUpFlags: PermissionFollowUpFlags(defaults: settings)),
+                  storeLocation: location,
+                  permissionFollowUp: PermissionFollowUp(defaults: settings, notifications: notifications,
+                                                         location: location))
     }
 
     #if CLOUDKIT_ENABLED

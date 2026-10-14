@@ -3313,52 +3313,6 @@
         }
       }
     },
-    "intro.free.body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jede Funktion gehört allen, ohne Abo, ohne Werbung und ohne Premium-Stufe."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every feature is for everyone, with no subscription, no ads and no premium tier."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Minden funkció mindenkié, előfizetés, reklám és prémium csomag nélkül."
-          }
-        }
-      }
-    },
-    "intro.free.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Komplett kostenlos"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Completely free"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Teljesen ingyenes"
-          }
-        }
-      }
-    },
     "intro.getStarted" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3378,52 +3332,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kezdjük"
-          }
-        }
-      }
-    },
-    "intro.inventory.body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ganz oben siehst du, was bald abläuft. Mit dem Barcode legst du ein Produkt in Sekunden an."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The top of the list shows what expires soon. Scan a barcode to add a product in seconds."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Legfelül látod, mi jár le hamarosan. Vonalkóddal pillanatok alatt felveszel egy terméket."
-          }
-        }
-      }
-    },
-    "intro.inventory.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wissen, was da ist"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Know what's at home"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tudd, mi van otthon"
           }
         }
       }
@@ -3451,25 +3359,71 @@
         }
       }
     },
+    "intro.notNow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt nicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Now"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most nem"
+          }
+        }
+      }
+    },
     "intro.notifications.body" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Morgens eine kurze Zusammenfassung, montags ein Überblick, wie du möchtest. Nach „Los geht's“ fragt Larari um Erlaubnis; lehnst du ab, funktioniert alles andere genauso."
+            "value" : "Wir melden uns um 7 Uhr, und nur, wenn etwas abläuft."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A short summary in the morning, an overview on Mondays, as you like. Larari asks for permission after Get started; if you say no, everything else works the same."
+            "value" : "We check in at 7 am, and only when something expires."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reggelente rövid összefoglaló, hétfőnként áttekintés, ahogy szeretnéd. A Kezdjük után engedélyt kér; ha nemet mondasz, minden más ugyanúgy működik."
+            "value" : "Reggel 7-kor jelentkezünk, és csak akkor, ha lejár valami."
+          }
+        }
+      }
+    },
+    "intro.notifications.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„Weiter“ fragt nach der Erlaubnis für Mitteilungen. Ändern kannst du das jederzeit unter Einstellungen ▸ Larari."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next asks for permission to send notifications. You can change this any time in Settings ▸ Larari."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Tovább után engedélyt kér az értesítésekhez. Később a Beállítások ▸ Larari alatt módosíthatod."
           }
         }
       }
@@ -3493,52 +3447,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Előzd meg a lejáratot"
-          }
-        }
-      }
-    },
-    "intro.privacy.body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alles liegt in deiner eigenen iCloud, deshalb braucht Larari ein iCloud-Konto. Larari sammelt nichts und verfolgt nichts."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Everything lives in your own iCloud, which is why Larari needs an iCloud account. Larari collects nothing and tracks nothing."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Minden a saját iCloudodban van, ezért kell hozzá iCloud-fiók. A Larari semmit nem gyűjt és nem követ."
-          }
-        }
-      }
-    },
-    "intro.privacy.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deine Daten gehören dir"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your data is yours"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Az adataid a tieid"
           }
         }
       }
@@ -3704,881 +3612,6 @@
         }
       }
     },
-    "intro.scene.added" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zum Vorrat hinzugefügt"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Added to inventory"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Készletbe került"
-          }
-        }
-      }
-    },
-    "intro.scene.ads" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Werbung"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ads"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reklámok"
-          }
-        }
-      }
-    },
-    "intro.scene.anyShop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beliebiges Geschäft"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Any store"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bármelyik üzlet"
-          }
-        }
-      }
-    },
-    "intro.scene.apples" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Äpfel"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apples"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alma"
-          }
-        }
-      }
-    },
-    "intro.scene.apples.amount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6 Stk."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6 pcs"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6 db"
-          }
-        }
-      }
-    },
-    "intro.scene.bought" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gekauft"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bought"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Megvettem"
-          }
-        }
-      }
-    },
-    "intro.scene.bread" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Brot"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bread"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kenyér"
-          }
-        }
-      }
-    },
-    "intro.scene.bread.amount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 Stk."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 pc"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 db"
-          }
-        }
-      }
-    },
-    "intro.scene.cornerShop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eckladen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Corner shop"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sarki bolt"
-          }
-        }
-      }
-    },
-    "intro.scene.dataCollection" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datensammlung"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data collection"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adatgyűjtés"
-          }
-        }
-      }
-    },
-    "intro.scene.days %lld" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld Tag"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld Tage"
-                }
-              }
-            }
-          }
-        },
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld day"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld days"
-                }
-              }
-            }
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld nap"
-          }
-        }
-      }
-    },
-    "intro.scene.eggs" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eier"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eggs"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tojás"
-          }
-        }
-      }
-    },
-    "intro.scene.eggs.buyAmount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "10 Stk."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "10 pcs"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "10 db"
-          }
-        }
-      }
-    },
-    "intro.scene.encrypted" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verschlüsselt in iCloud"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Encrypted in iCloud"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Titkosítva az iCloudban"
-          }
-        }
-      }
-    },
-    "intro.scene.exportable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jederzeit exportierbar"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export any time"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bármikor kimenthető"
-          }
-        }
-      }
-    },
-    "intro.scene.free" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kostenlos"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ingyenes"
-          }
-        }
-      }
-    },
-    "intro.scene.fridge" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kühlschrank"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fridge"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hűtő"
-          }
-        }
-      }
-    },
-    "intro.scene.inviteLink" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einladungslink"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invite link"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meghívó link"
-          }
-        }
-      }
-    },
-    "intro.scene.joined" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anna und Bence sind beigetreten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anna and Bence joined"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anna és Bence csatlakozott"
-          }
-        }
-      }
-    },
-    "intro.scene.list" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wocheneinkauf"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weekly shop"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Heti bevásárlás"
-          }
-        }
-      }
-    },
-    "intro.scene.milk" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Milch"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Milk"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tej"
-          }
-        }
-      }
-    },
-    "intro.scene.milk.amount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 l"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 l"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 l"
-          }
-        }
-      }
-    },
-    "intro.scene.milk.buyAmount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 l"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 l"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 l"
-          }
-        }
-      }
-    },
-    "intro.scene.noAccount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kein eigenes Larari-Konto"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No separate Larari account"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nincs külön Larari-fiók"
-          }
-        }
-      }
-    },
-    "intro.scene.noTracking" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kein Tracking"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No tracking"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nincs követés"
-          }
-        }
-      }
-    },
-    "intro.scene.notification" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 Artikel laufen heute ab, 3 diese Woche."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 items expire today, 3 this week."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 tétel ma lejár, 3 a héten."
-          }
-        }
-      }
-    },
-    "intro.scene.pantry" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vorratskammer"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pantry"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kamra"
-          }
-        }
-      }
-    },
-    "intro.scene.premium" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium-Stufe"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium tier"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prémium csomag"
-          }
-        }
-      }
-    },
-    "intro.scene.quantity" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Menge"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quantity"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mennyiség"
-          }
-        }
-      }
-    },
-    "intro.scene.subscription" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abo"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscription"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Előfizetés"
-          }
-        }
-      }
-    },
-    "intro.scene.toInventory" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In den Vorrat"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to inventory"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Készletbe"
-          }
-        }
-      }
-    },
-    "intro.scene.today" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Läuft heute ab"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expires today"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ma lejár"
-          }
-        }
-      }
-    },
-    "intro.scene.yogurt" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Joghurt"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yogurt"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Joghurt"
-          }
-        }
-      }
-    },
-    "intro.scene.yogurt.amount" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4 Stk."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4 pcs"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4 db"
-          }
-        }
-      }
-    },
-    "intro.scene.you" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Du"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Te"
-          }
-        }
-      }
-    },
-    "intro.shopping.body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tippe auf einen Artikel, wenn du ihn gekauft hast, und er landet mit einem Schritt im Vorrat. Kommst du in ein Geschäft, sagt dir Larari, ob dort etwas von deiner Liste wartet."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap an item when you've bought it, and it goes into your inventory in one step. When you reach a store, Larari tells you if something on your list is waiting there."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koppints a tételre, ha megvetted, és egy lépésben a készletbe kerül. Ha boltba érsz, a Larari szól, ha ott is vár valami a listádon."
-          }
-        }
-      }
-    },
-    "intro.shopping.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einfach einkaufen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shopping made simple"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Egyszerű bevásárlás"
-          }
-        }
-      }
-    },
     "intro.skip" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4602,48 +3635,117 @@
         }
       }
     },
-    "intro.spaces.body" : {
+    "intro.stores.body" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein persönlicher Bereich gehört nur dir. Einen Haushalt teilst du per Link mit deiner Familie, und oben im Menü wechselst du."
+            "value" : "Kommst du zu einem Laden, in dem etwas von deiner Liste wartet, sagt Larari Bescheid, und nach dem Öffnen steht die Liste auch auf dem Sperrbildschirm."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your Personal space is only yours. Share a household with your family by link, and switch with the menu at the top."
+            "value" : "When you reach a store where something on your list is waiting, Larari tells you, and once you open it, the list is on your Lock Screen too."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A Személyes tér csak a tiéd. Egy háztartást linkkel megoszthatsz a családoddal, és a fenti menüvel válthatsz."
+            "value" : "Ha olyan bolthoz érsz, ahol vár valami a listádon, a Larari szól, és megnyitva a zárolási képernyőn is ott a lista."
           }
         }
       }
     },
-    "intro.spaces.title" : {
+    "intro.stores.hint" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Persönlich und geteilt"
+            "value" : "Nach „Los geht's“ fragt Larari nach deinem Standort, während du die App nutzt. Er bleibt auf deinem iPhone, und du kannst das jederzeit unter Einstellungen ▸ Larari ausschalten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Personal and shared"
+            "value" : "Get started asks for your location while you use Larari. It stays on your iPhone, and you can turn this off any time in Settings ▸ Larari."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Személyes és közös"
+            "value" : "A Kezdjük után a helyzetedet kéri, amíg a Lararit használod. A helyzeted az iPhone-on marad, és később a Beállítások ▸ Larari alatt kikapcsolhatod."
+          }
+        }
+      }
+    },
+    "intro.stores.sample.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 Artikel warten auf deiner Liste."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 items are waiting on your list."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 tétel vár a listádon."
+          }
+        }
+      }
+    },
+    "intro.stores.sample.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eckladen in der Nähe"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corner shop nearby"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sarki bolt a közelben"
+          }
+        }
+      }
+    },
+    "intro.stores.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Laden erinnern?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind you at the store?"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szóljunk a boltban?"
           }
         }
       }
@@ -4740,75 +3842,6 @@
         }
       }
     },
-    "intro.summary.hint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Das kannst du jederzeit unter Einstellungen ▸ Larari ändern."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can change this any time in Settings ▸ Larari."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ezt később a Beállítások ▸ Larari alatt bármikor módosíthatod."
-          }
-        }
-      }
-    },
-    "intro.summary.subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wir melden uns um 7 Uhr, und nur, wenn etwas abläuft."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We check in at 7 am, and only when something expires."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reggel 7-kor jelentkezünk, és csak akkor, ha lejár valami."
-          }
-        }
-      }
-    },
-    "intro.summary.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wann sollen wir uns melden?"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When should we notify you?"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mikor szóljunk?"
-          }
-        }
-      }
-    },
     "intro.summary.weekly" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4855,25 +3888,186 @@
         }
       }
     },
-    "intro.welcome.body" : {
+    "intro.welcome.inventory.detail" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vorrat, Ablaufdaten und Einkäufe deines Haushalts an einem Ort."
+            "value" : "Was bald abläuft, steht oben. Mit dem Barcode ist ein Produkt in Sekunden erfasst."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your household's inventory, expiry dates and shopping in one place."
+            "value" : "What expires soon is on top. Scan a barcode to add a product in seconds."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A háztartásod készlete, lejárati dátumai és bevásárlása egy helyen."
+            "value" : "Legfelül, ami hamarosan lejár. Vonalkóddal pillanatok alatt felveszed."
+          }
+        }
+      }
+    },
+    "intro.welcome.inventory.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wissen, was da ist"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Know what's at home"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tudd, mi van otthon"
+          }
+        }
+      }
+    },
+    "intro.welcome.privacy.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In deiner eigenen iCloud, daher brauchst du ein iCloud-Konto. Kostenlos, ohne Werbung und ohne Tracking."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stored in your own iCloud, so you need an iCloud account. Free, with no ads and no tracking."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A saját iCloudodban, ezért iCloud-fiók kell. Ingyenes, reklám és követés nélkül."
+          }
+        }
+      }
+    },
+    "intro.welcome.privacy.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Daten gehören dir"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your data is yours"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az adataid a tieid"
+          }
+        }
+      }
+    },
+    "intro.welcome.shopping.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Tippen, und es ist im Vorrat. Im Laden sagt Larari, was dort auf dich wartet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One tap puts it into your inventory. At the store, Larari tells you what's waiting there."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Egy koppintás, és a készletbe kerül. A boltban szól, ha vár valami."
+          }
+        }
+      }
+    },
+    "intro.welcome.shopping.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einfach einkaufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping made simple"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Egyszerű bevásárlás"
+          }
+        }
+      }
+    },
+    "intro.welcome.spaces.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile einen Haushalt per Link mit deiner Familie."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share a household with your family by link."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Egy háztartást linkkel megoszthatsz a családoddal."
+          }
+        }
+      }
+    },
+    "intro.welcome.spaces.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persönlich und geteilt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal and shared"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Személyes és közös"
           }
         }
       }

@@ -1,8 +1,9 @@
 import LarariCore
 import SwiftUI
 
-/// Swipeable first-launch introduction (P1-10, animated in P1-10a) with page dots, Skip, Next and Get started. The
-/// summary choice (P2-10a) comes up over the last page when Get started got notification permission.
+/// Swipeable first-launch introduction (P1-10, four pages since P1-10b) with page dots, Skip, Next and Get started.
+/// The notifications and store pages ask for their permission with their main button and have "Not now" instead of
+/// Skip (user pick X).
 struct IntroductionView: View {
     @Bindable var model: IntroductionModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -10,17 +11,18 @@ struct IntroductionView: View {
     var body: some View {
         TabView(selection: $model.currentPage) {
             ForEach(IntroductionPage.allCases) { page in
-                IntroductionPageView(page: page, isActive: model.currentPage == page,
-                                     addsToInventory: $model.addsToInventory)
+                IntroductionPageView(page: page, model: model)
                     .tag(page)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
         .indexViewStyle(.page(backgroundDisplayMode: .always))
+        // The notifications page's Next moves on after the permission prompt, outside any withAnimation.
+        .animation(reduceMotion ? nil : Motion.settle, value: model.currentPage)
         .safeAreaInset(edge: .top) {
             HStack {
                 Spacer()
-                if !model.isOnLastPage {
+                if !model.asksPermission {
                     Button("intro.skip") { model.skip() }
                         .accessibilityIdentifier("introduction.skip")
                 }
@@ -29,16 +31,9 @@ struct IntroductionView: View {
             .frame(minHeight: 44)
         }
         .safeAreaInset(edge: .bottom) {
-            Group {
-                if model.isOnLastPage {
-                    Button {
-                        Task { await model.finish() }
-                    } label: {
-                        Text("intro.getStarted").frame(maxWidth: .infinity)
-                    }
-                    .prominentButtonStyle()
-                    .accessibilityIdentifier("introduction.getStarted")
-                } else {
+            VStack(spacing: 4) {
+                switch model.currentPage {
+                case .welcome, .purchase:
                     Button {
                         withMotion(Motion.settle, reduceMotion: reduceMotion) { model.next() }
                     } label: {
@@ -46,16 +41,49 @@ struct IntroductionView: View {
                     }
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("introduction.next")
+                case .notifications:
+                    permissionButtons(title: "intro.next", identifier: "introduction.notifications.next",
+                                      notNowIdentifier: "introduction.notifications.notNow") {
+                        await model.allowNotifications()
+                    } notNow: {
+                        model.declineNotifications()
+                    }
+                case .stores:
+                    permissionButtons(title: "intro.getStarted", identifier: "introduction.getStarted",
+                                      notNowIdentifier: "introduction.stores.notNow") {
+                        await model.finish()
+                    } notNow: {
+                        model.declineStoreReminders()
+                    }
                 }
             }
+            .disabled(model.isAsking)
             .controlSize(.large)
             .frame(maxWidth: 520)
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
         }
         .tint(.accentColor)
-        .sheet(isPresented: $model.showsSummaryChoice, onDismiss: model.summaryChoiceClosed) {
-            SummaryChoiceSheet(model: model)
+    }
+
+    /// The main button asks for the page's permission; "Not now" turns its switches off without asking.
+    private func permissionButtons(title: LocalizedStringKey, identifier: String, notNowIdentifier: String,
+                                   action: @escaping () async -> Void, notNow: @escaping () -> Void) -> some View {
+        Group {
+            Button {
+                Task { await action() }
+            } label: {
+                Text(title).frame(maxWidth: .infinity)
+            }
+            .prominentButtonStyle()
+            .accessibilityIdentifier(identifier)
+            Button {
+                withMotion(Motion.settle, reduceMotion: reduceMotion) { notNow() }
+            } label: {
+                Text("intro.notNow").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityIdentifier(notNowIdentifier)
         }
     }
 }

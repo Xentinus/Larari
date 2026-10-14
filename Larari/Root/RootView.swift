@@ -68,8 +68,11 @@ struct RootView: View {
                             startNextInvitation()
                             // P5-06: removals and permissions after an import; then N-05's queued widget ticks
                             app.scheduleShareRefresh(after: .zero)
+                            // P1-10b (2A): a switch turned on in Settings after the introduction's "Not now"
+                            Task { await app.permissionFollowUp?.check() }
                         }
                     }
+                    .task { await app.permissionFollowUp?.check() }
                     .onChange(of: app.shareAcceptance.state) { _, state in
                         guard ownsInvitation, case let .accepted(id) = state else { return }
                         selection.selectedSpaceID = id      // P5-03 then shows member setup for it

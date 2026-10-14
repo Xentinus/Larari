@@ -6,14 +6,15 @@ import UserNotifications
 
 /// The Settings app switch (`Settings.bundle`, key `storeRemindersEnabled`, default on, P4-06).
 enum StoreReminderSettings {
-    static let key = "storeRemindersEnabled"
+    static let key = StoreReminderPreference.key
 
     /// Settings bundle defaults are not applied until the user opens the page, so the app registers its own.
     static func registerDefault() {
-        UserDefaults.standard.register(defaults: [key: true])
+        AppModel.notificationPreferencesStore.register(defaults: [key: true])
     }
 
-    static var isEnabled: Bool { UserDefaults.standard.bool(forKey: key) }
+    /// The same store the introduction's store page writes (P1-10b): `.standard`, or a per-launch suite under UI tests.
+    static var isEnabled: Bool { StoreReminderPreference(defaults: AppModel.notificationPreferencesStore).isEnabled }
 }
 
 /// Routes notification taps and shows banners while the app is open (expiry summaries and store reminders).
