@@ -1,7 +1,8 @@
 import LarariCore
 import SwiftUI
 
-/// Swipeable first-launch introduction (P1-10, animated in P1-10a) with page dots, Skip, Next and Get started.
+/// Swipeable first-launch introduction (P1-10, animated in P1-10a) with page dots, Skip, Next and Get started. The
+/// summary choice (P2-10a) comes up over the last page when Get started got notification permission.
 struct IntroductionView: View {
     @Bindable var model: IntroductionModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -53,5 +54,8 @@ struct IntroductionView: View {
             .padding(.bottom, 12)
         }
         .tint(.accentColor)
+        .sheet(isPresented: $model.showsSummaryChoice, onDismiss: model.summaryChoiceClosed) {
+            SummaryChoiceSheet(model: model)
+        }
     }
 }

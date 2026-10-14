@@ -104,24 +104,41 @@ private struct PurchaseChoice: View {
     @Binding var addsToInventory: Bool
 
     var body: some View {
-        VStack(spacing: 0) {
-            row(true, symbol: "shippingbox", title: "intro.purchase.inventory",
-                detail: "intro.purchase.inventory.detail", identifier: "introduction.purchase.inventory")
+        IntroChoiceGroup {
+            IntroChoiceRow(symbol: "shippingbox", title: "intro.purchase.inventory",
+                           detail: "intro.purchase.inventory.detail", isSelected: addsToInventory,
+                           identifier: "introduction.purchase.inventory") { addsToInventory = true }
             Divider().padding(.leading, 58)
-            row(false, symbol: "list.bullet", title: "intro.purchase.listOnly",
-                detail: "intro.purchase.listOnly.detail", identifier: "introduction.purchase.listOnly")
+            IntroChoiceRow(symbol: "list.bullet", title: "intro.purchase.listOnly",
+                           detail: "intro.purchase.listOnly.detail", isSelected: !addsToInventory,
+                           identifier: "introduction.purchase.listOnly") { addsToInventory = false }
         }
-        .background(Color(uiColor: .secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .multilineTextAlignment(.leading)
     }
+}
 
-    private func row(_ value: Bool, symbol: String, title: LocalizedStringKey, detail: LocalizedStringKey,
-                     identifier: String) -> some View {
-        let selected = addsToInventory == value
-        return Button {
-            addsToInventory = value
-        } label: {
+/// The rounded group around an introduction choice's rows (P4-07, P2-10a).
+struct IntroChoiceGroup<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(spacing: 0) { content }
+            .background(Color(uiColor: .secondarySystemBackground),
+                        in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .multilineTextAlignment(.leading)
+    }
+}
+
+/// One selectable row of an introduction choice: a symbol, a title, a one-line detail and a check circle.
+struct IntroChoiceRow: View {
+    let symbol: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    let isSelected: Bool
+    let identifier: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: symbol)
                     .font(.title3)
@@ -132,11 +149,11 @@ private struct PurchaseChoice: View {
                     Text(detail).font(.footnote).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(selected ? Palette.mochaButtonForeground : Color(uiColor: .tertiaryLabel),
-                                     selected ? Palette.mochaButtonBackground : Color(uiColor: .tertiaryLabel))
+                    .foregroundStyle(isSelected ? Palette.mochaButtonForeground : Color(uiColor: .tertiaryLabel),
+                                     isSelected ? Palette.mochaButtonBackground : Color(uiColor: .tertiaryLabel))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -145,7 +162,7 @@ private struct PurchaseChoice: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(identifier)
     }
 }

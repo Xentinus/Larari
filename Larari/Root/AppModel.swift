@@ -156,15 +156,18 @@ final class AppModel {
         if UITestHooks.resetIntroduction {
             UserDefaults.standard.removeObject(forKey: IntroductionModel.defaultsKey)
         }
-        notifications = UITestHooks.isActive ? UITestNotificationAuthorizer() : UserNotificationAuthorizer()
+        notifications = UITestHooks.isActive ? UITestNotificationAuthorizer(granted: UITestHooks.grantsNotifications)
+                                             : UserNotificationAuthorizer()
         #else
         notifications = UserNotificationAuthorizer()
         #endif
         self.init(persistence: persistence,
                   accountProvider: provider,
                   defaults: defaults,
-                  introduction: IntroductionModel(notifications: notifications,
-                                                  purchaseDefaults: PurchaseDefaults(defaults: Self.purchaseDefaultsStore)))
+                  introduction: IntroductionModel(
+                    notifications: notifications,
+                    purchaseDefaults: PurchaseDefaults(defaults: Self.purchaseDefaultsStore),
+                    notificationPreferences: NotificationPreferences(defaults: Self.notificationPreferencesStore)))
     }
 
     #if CLOUDKIT_ENABLED
@@ -298,6 +301,20 @@ final class AppModel {
         return .standard
     }()
 
+    /// The daily and weekly summary switches (P2-10a): the app defaults, which Settings ▸ Larari writes, or under UI
+    /// tests a suite wiped once per launch, like `purchaseDefaultsStore`. The argument domain
+    /// (`-dailySummaryEnabled NO`) is read through either.
+    static let notificationPreferencesStore: UserDefaults = {
+        #if DEBUG
+        if UITestHooks.isActive {
+            let suite = "uiTest.notifications"
+            UserDefaults.standard.removePersistentDomain(forName: suite)
+            return UserDefaults(suiteName: suite) ?? .standard
+        }
+        #endif
+        return .standard
+    }()
+
     /// Builds the one `ServiceContainer` (and applies the UI-test seed) after the Personal space is bootstrapped.
     func buildServices() async {
         guard services == nil, !isBuildingServices,
@@ -328,7 +345,9 @@ final class AppModel {
                                          shoppingActivityDefaults: Self.shoppingActivityDefaults,
                                          widgetStore: widgets?.store, widgetQueue: widgets?.queue,
                                          reloadWidgets: { WidgetCenter.shared.reloadAllTimelines() },
-                                         purchaseDefaults: PurchaseDefaults(defaults: Self.purchaseDefaultsStore))
+                                         purchaseDefaults: PurchaseDefaults(defaults: Self.purchaseDefaultsStore),
+                                         notificationPreferences: NotificationPreferences(
+                                            defaults: Self.notificationPreferencesStore))
         #if DEBUG
         if UITestHooks.isSeeded {
             try? await UITestSeed.populate(container, in: personalSpace)

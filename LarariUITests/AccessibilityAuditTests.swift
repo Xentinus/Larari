@@ -7,7 +7,7 @@ final class AccessibilityAuditTests: XCTestCase {
     enum Screen: String {
         case inventory, stockSheet, storePicker, search, productDetail, productForm, shopping, listManager, addItem, purchase,
              inventoryByName, inventoryByExpiry, shoppingByName, productHistory, categoryPicker, spaceSettings,
-             introduction, introductionPurchase, gate
+             introduction, introductionPurchase, summaryChoice, gate
     }
 
     enum Mode: String, CaseIterable {
@@ -18,6 +18,7 @@ final class AccessibilityAuditTests: XCTestCase {
     /// line in X-04's Results.
     static let ignoredIdentifiers: Set<String> = [
         "uiTest.liveActivity",          // DEBUG-only UI-test hook (N-04), not in a release build
+        "uiTest.notificationKinds",     // DEBUG-only UI-test hook (P2-10a), not in a release build
     ]
 
     /// List-row Label titles (seed data) that wrap under their icon at the largest sizes, by screen.
@@ -185,6 +186,7 @@ final class AccessibilityAuditTests: XCTestCase {
     @MainActor func testSpaceSettings() { audit(.spaceSettings) }
     @MainActor func testIntroduction() { audit(.introduction) }
     @MainActor func testIntroductionPurchase() { audit(.introductionPurchase) }
+    @MainActor func testSummaryChoice() { audit(.summaryChoice) }
     @MainActor func testGate() { audit(.gate) }
 
     @MainActor
@@ -247,6 +249,7 @@ final class AccessibilityAuditTests: XCTestCase {
         switch screen {
         case .shopping, .shoppingByName, .listManager, .addItem, .purchase: extra.append("-uiTestSeedStoreItems")
         case .introduction, .introductionPurchase: extra.append("-resetIntroduction")
+        case .summaryChoice: extra += ["-resetIntroduction", "-uiTestNotificationsGranted"]
         default: break
         }
         if mode == .dark { extra.append("-uiTestDarkMode") }
@@ -258,7 +261,8 @@ final class AccessibilityAuditTests: XCTestCase {
             extra.append("-uiTestIncreaseContrast")
         }
         let app = XCUIApplication.larari(accountState: screen == .gate ? "noAccount" : "available",
-                                          skipIntroduction: ![.introduction, .introductionPurchase].contains(screen),
+                                          skipIntroduction: ![.introduction, .introductionPurchase, .summaryChoice]
+                                            .contains(screen),
                                           extraArguments: extra)
         app.launch()
         return app
@@ -503,6 +507,12 @@ final class AccessibilityAuditTests: XCTestCase {
             guard app.buttons["introduction.next"].waitForExistence(timeout: 10) else { return false }
             for _ in 0..<4 { app.buttons["introduction.next"].tap() }
             return app.buttons["introduction.purchase.inventory"].waitForExistence(timeout: 5)
+        case .summaryChoice:
+            // P2-10a: "Get started" with notifications allowed brings up the daily / weekly choice.
+            guard app.buttons["introduction.next"].waitForExistence(timeout: 10) else { return false }
+            while app.buttons["introduction.next"].exists { app.buttons["introduction.next"].tap() }
+            app.buttons["introduction.getStarted"].tap()
+            return app.buttons["introduction.summary.done"].waitForExistence(timeout: 5)
         case .gate:
             return app.descendants(matching: .any)["accountGate"].waitForExistence(timeout: 10)
         }

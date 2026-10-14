@@ -22,6 +22,10 @@ enum UITestHooks {
     /// `-resetIntroduction`: forget that the introduction was seen, so it shows on this launch.
     static var resetIntroduction: Bool { contains("-resetIntroduction") }
 
+    /// `-uiTestNotificationsGranted`: "Get started" gets notification permission without the system prompt, so the
+    /// summary choice comes up (P2-10a).
+    static var grantsNotifications: Bool { contains("-uiTestNotificationsGranted") }
+
     /// True whenever the app was launched by a UI test.
     static var isActive: Bool { accountState != nil }
 
@@ -86,8 +90,10 @@ nonisolated struct UITestNotificationCenter: NotificationCentering {
     func addLocation(_ reminder: PlannedStoreReminder) async throws {}
 }
 
-/// Never shows the system prompt during UI tests.
+/// Never shows the system prompt during UI tests; the answer is `granted` (`-uiTestNotificationsGranted`).
 nonisolated struct UITestNotificationAuthorizer: NotificationAuthorizing {
-    func requestAuthorization() async throws -> Bool { false }
+    var granted = false
+
+    func requestAuthorization() async throws -> Bool { granted }
 }
 #endif

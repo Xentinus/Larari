@@ -53,7 +53,7 @@ struct IntroductionModelTests {
 
     @Test func finishPersistsAndNeverShowsAgain() async {
         let defaults = freshDefaults()
-        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer())
+        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer(granted: false))
         await model.finish()
 
         #expect(!model.shouldShow)
@@ -113,7 +113,7 @@ struct IntroductionModelTests {
 
     @Test func choosingOffTheListOnlyWritesTheSetting() async {
         let defaults = freshDefaults()
-        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer())
+        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer(granted: false))
         model.addsToInventory = false
         #expect(defaults.object(forKey: PurchaseDefaults.key) as? Bool == false)
         await model.finish()
@@ -131,5 +131,66 @@ struct IntroductionModelTests {
         let defaults = freshDefaults()
         defaults.set(false, forKey: PurchaseDefaults.key)
         #expect(!IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer()).addsToInventory)
+    }
+
+    // MARK: P2-10a summary choice (G-A, D-B)
+
+    @Test func allowedShowsTheSummaryChoiceAndDoneWritesIt() async {
+        let defaults = freshDefaults()
+        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer(granted: true))
+        #expect(model.summaryChoice == .all, "both is preselected")
+        await model.finish()
+        #expect(model.showsSummaryChoice)
+        #expect(model.shouldShow, "the introduction stays under the sheet")
+
+        model.summaryChoice = .daily
+        model.confirmSummaryChoice()
+        #expect(!model.showsSummaryChoice)
+        model.summaryChoiceClosed()                     // the sheet's onDismiss
+        #expect(!model.shouldShow)
+        #expect(defaults.bool(forKey: IntroductionModel.defaultsKey))
+        #expect(defaults.object(forKey: NotificationPreferences.dailyKey) as? Bool == true)
+        #expect(defaults.object(forKey: NotificationPreferences.weeklyKey) as? Bool == false)
+    }
+
+    @Test func swipingTheChoiceAwayKeepsBoth() async {
+        let defaults = freshDefaults()
+        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer(granted: true))
+        await model.finish()
+        model.summaryChoice = .weekly
+        model.summaryChoiceClosed()
+        #expect(!model.shouldShow)
+        #expect(defaults.object(forKey: NotificationPreferences.dailyKey) == nil)
+        #expect(NotificationPreferences(defaults: defaults).kinds == .all)
+    }
+
+    @Test func deniedShowsNoChoiceAndLeavesTheSwitches() async {
+        for notifications in [FakeNotificationAuthorizer(granted: false), FakeNotificationAuthorizer(fails: true)] {
+            let defaults = freshDefaults()
+            let model = IntroductionModel(defaults: defaults, notifications: notifications)
+            await model.finish()
+            #expect(!model.showsSummaryChoice)
+            #expect(!model.shouldShow)
+            #expect(defaults.object(forKey: NotificationPreferences.dailyKey) == nil)
+            #expect(defaults.object(forKey: NotificationPreferences.weeklyKey) == nil)
+        }
+    }
+
+    @Test func skipAsksNoChoiceAndLeavesTheSwitches() async {
+        let defaults = freshDefaults()
+        let notifications = FakeNotificationAuthorizer(granted: true)
+        let model = IntroductionModel(defaults: defaults, notifications: notifications)
+        model.skip()
+        #expect(!model.showsSummaryChoice)
+        #expect(await notifications.requests == 0)
+        #expect(defaults.object(forKey: NotificationPreferences.dailyKey) == nil)
+    }
+
+    @Test func theChoiceStartsFromTheStoredSwitches() {
+        let defaults = freshDefaults()
+        NotificationPreferences(defaults: defaults).set(.weekly)
+        #expect(IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer()).summaryChoice == .weekly)
+        NotificationPreferences(defaults: defaults).set([])
+        #expect(IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer()).summaryChoice == .all)
     }
 }

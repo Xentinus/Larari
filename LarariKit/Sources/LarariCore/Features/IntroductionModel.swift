@@ -8,7 +8,9 @@ public enum IntroductionPage: Int, CaseIterable, Identifiable, Sendable {
     public var id: Int { rawValue }
 }
 
-/// First-launch introduction. Shown once; finishing or skipping hides it for good.
+/// First-launch introduction. Shown once; finishing or skipping hides it for good. When "Get started" gets
+/// notification permission, the summary choice (P2-10a, G-A) is asked over the last page, and the introduction
+/// closes with it.
 @MainActor
 @Observable
 public final class IntroductionModel {
@@ -25,20 +27,29 @@ public final class IntroductionModel {
         }
     }
 
+    /// The summary choice sheet is up: "Get started" got notification permission (P2-10a).
+    public var showsSummaryChoice = false
+    /// The sheet's selection, written by "Done" only; swiping the sheet away keeps the switches as they are.
+    public var summaryChoice: NotificationKinds
+
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let notifications: any NotificationAuthorizing
     @ObservationIgnored private let purchaseDefaults: PurchaseDefaults
+    @ObservationIgnored private let notificationPreferences: NotificationPreferences
     @ObservationIgnored private var hasRequestedPermission = false
 
-    /// `purchaseDefaults` defaults to the same `defaults`.
+    /// `purchaseDefaults` and `notificationPreferences` default to the same `defaults`.
     public init(defaults: UserDefaults = .standard, notifications: any NotificationAuthorizing,
-                purchaseDefaults: PurchaseDefaults? = nil) {
+                purchaseDefaults: PurchaseDefaults? = nil, notificationPreferences: NotificationPreferences? = nil) {
         self.defaults = defaults
         self.notifications = notifications
         let purchase = purchaseDefaults ?? PurchaseDefaults(defaults: defaults)
         self.purchaseDefaults = purchase
+        let preferences = notificationPreferences ?? NotificationPreferences(defaults: defaults)
+        self.notificationPreferences = preferences
         hasSeenIntroduction = defaults.bool(forKey: Self.defaultsKey)
         addsToInventory = purchase.addsToInventory
+        summaryChoice = preferences.kinds.isEmpty ? .all : preferences.kinds
     }
 
     public var shouldShow: Bool { !hasSeenIntroduction }
@@ -56,14 +67,30 @@ public final class IntroductionModel {
         markSeen()
     }
 
-    /// "Get started": hides the introduction, then asks for notification permission once.
-    /// The answer does not matter; declining changes nothing else in the app.
+    /// "Get started": asks for notification permission once. Allowed, the summary choice comes up and the
+    /// introduction stays until it closes; declined (or failed), the introduction closes with nothing more said
+    /// (P2-10a, D-B), and nothing else in the app changes.
     public func finish() async {
-        let wasShowing = !hasSeenIntroduction
-        markSeen()
-        guard wasShowing, !hasRequestedPermission else { return }
+        guard !hasSeenIntroduction, !hasRequestedPermission else { return }
         hasRequestedPermission = true
-        _ = try? await notifications.requestAuthorization()
+        let granted = (try? await notifications.requestAuthorization()) ?? false
+        if granted {
+            showsSummaryChoice = true
+        } else {
+            markSeen()
+        }
+    }
+
+    /// "Done" on the summary choice: writes the Settings switches and closes the sheet.
+    public func confirmSummaryChoice() {
+        notificationPreferences.set(summaryChoice)
+        showsSummaryChoice = false
+    }
+
+    /// The summary choice sheet has gone, by "Done" or by a swipe: the introduction closes.
+    public func summaryChoiceClosed() {
+        showsSummaryChoice = false
+        markSeen()
     }
 
     private func markSeen() {

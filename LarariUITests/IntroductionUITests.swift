@@ -43,6 +43,7 @@ final class IntroductionUITests: XCTestCase {
 
         app.buttons["Get started"].tap()
         XCTAssertTrue(app.staticTexts["iCloud is required"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["When should we notify you?"].exists, "declined: no summary choice (D-B)")
 
         app.terminate()
         let relaunched = XCUIApplication.larari(accountState: "noAccount", skipIntroduction: false)
@@ -144,5 +145,51 @@ final class IntroductionUITests: XCTestCase {
         let toggle = app.switches["shopping.purchase.addToInventory"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         XCTAssertEqual(toggle.value as? String, "0", "the introduction's answer is the sheet's default")
+    }
+
+    /// P2-10a (G-A): "Get started" with notifications allowed asks for daily, weekly or both; "Done" writes the
+    /// Settings switches.
+    @MainActor
+    func testAllowedNotificationsAskWhichSummaries() throws {
+        let app = launchToSummaryChoice()
+        XCTAssertTrue(app.staticTexts["We check in at 7 am, and only when something expires."].exists)
+        let daily = app.buttons["introduction.summary.daily"]
+        let weekly = app.buttons["introduction.summary.weekly"]
+        let both = app.buttons["introduction.summary.both"]
+        XCTAssertTrue(both.isSelected, "both is preselected")
+        XCTAssertFalse(daily.isSelected)
+        weekly.tap()
+        XCTAssertTrue(weekly.isSelected)
+        XCTAssertFalse(both.isSelected)
+
+        app.buttons["introduction.summary.done"].tap()
+        XCTAssertTrue(app.navigationBars["Inventory"].waitForExistence(timeout: 10))
+        let kinds = app.staticTexts["uiTest.notificationKinds"]
+        XCTAssertTrue(kinds.waitForExistence(timeout: 5))
+        XCTAssertEqual(kinds.label, "weekly")
+    }
+
+    /// P2-10a: swiping the choice away closes the introduction and keeps both summaries on.
+    @MainActor
+    func testSwipingTheSummaryChoiceAwayKeepsBoth() throws {
+        let app = launchToSummaryChoice()
+        app.buttons["introduction.summary.daily"].tap()
+        let grabber = app.buttons["Sheet Grabber"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        grabber.press(forDuration: 0.1,
+                      thenDragTo: app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+        XCTAssertTrue(app.navigationBars["Inventory"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["uiTest.notificationKinds"].label, "daily weekly")
+    }
+
+    @MainActor
+    private func launchToSummaryChoice() -> XCUIApplication {
+        let app = XCUIApplication.larari(skipIntroduction: false,
+                                          extraArguments: ["-resetIntroduction", "-uiTestNotificationsGranted"])
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
+        while !app.buttons["Get started"].exists { app.buttons["Next"].tap() }
+        app.buttons["Get started"].tap()
+        XCTAssertTrue(app.staticTexts["When should we notify you?"].waitForExistence(timeout: 5))
+        return app
     }
 }

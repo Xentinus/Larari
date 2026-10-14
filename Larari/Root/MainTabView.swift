@@ -50,7 +50,10 @@ struct MainTabView: View {
             UITestHooks.runQuickActionIfRequested(services: services)       // after the reset, never before
         }
         .overlay(alignment: .topLeading) {
-            if UITestHooks.isActive { UITestLiveActivityProbe() }
+            if UITestHooks.isActive {
+                UITestLiveActivityProbe()
+                UITestNotificationKindsProbe(preferences: services.notificationPreferences)
+            }
         }
         #endif
     }

@@ -3457,19 +3457,19 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jeden Morgen eine kurze Zusammenfassung, montags ein Überblick. Nach „Los geht's“ fragt Larari um Erlaubnis; lehnst du ab, funktioniert alles andere genauso."
+            "value" : "Morgens eine kurze Zusammenfassung, montags ein Überblick, wie du möchtest. Nach „Los geht's“ fragt Larari um Erlaubnis; lehnst du ab, funktioniert alles andere genauso."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A short summary every morning and an overview on Mondays. Larari asks for permission after Get started; if you say no, everything else works the same."
+            "value" : "A short summary in the morning, an overview on Mondays, as you like. Larari asks for permission after Get started; if you say no, everything else works the same."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reggelente rövid összefoglaló jön, hétfőnként áttekintés. A Kezdjük után engedélyt kér; ha nemet mondasz, minden más ugyanúgy működik."
+            "value" : "Reggelente rövid összefoglaló, hétfőnként áttekintés, ahogy szeretnéd. A Kezdjük után engedélyt kér; ha nemet mondasz, minden más ugyanúgy működik."
           }
         }
       }
@@ -4644,6 +4644,213 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Személyes és közös"
+          }
+        }
+      }
+    },
+    "intro.summary.both" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beides"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Both"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mindkettő"
+          }
+        }
+      }
+    },
+    "intro.summary.both.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tägliche und wöchentliche Übersicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily summary and weekly overview"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napi összefoglaló és heti áttekintés"
+          }
+        }
+      }
+    },
+    "intro.summary.daily" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Täglich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naponta"
+          }
+        }
+      }
+    },
+    "intro.summary.daily.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn heute oder morgen etwas abläuft"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When something expires today or tomorrow"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ha ma vagy holnap lejár valami"
+          }
+        }
+      }
+    },
+    "intro.summary.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das kannst du jederzeit unter Einstellungen ▸ Larari ändern."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can change this any time in Settings ▸ Larari."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ezt később a Beállítások ▸ Larari alatt bármikor módosíthatod."
+          }
+        }
+      }
+    },
+    "intro.summary.subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir melden uns um 7 Uhr, und nur, wenn etwas abläuft."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We check in at 7 am, and only when something expires."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reggel 7-kor jelentkezünk, és csak akkor, ha lejár valami."
+          }
+        }
+      }
+    },
+    "intro.summary.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wann sollen wir uns melden?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When should we notify you?"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikor szóljunk?"
+          }
+        }
+      }
+    },
+    "intro.summary.weekly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wöchentlich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekly"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hetente"
+          }
+        }
+      }
+    },
+    "intro.summary.weekly.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montagmorgen, die Woche im Überblick"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monday morning, the week ahead"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hétfő reggel a hét áttekintése"
           }
         }
       }
