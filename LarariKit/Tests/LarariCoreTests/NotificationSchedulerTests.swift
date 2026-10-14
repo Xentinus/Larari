@@ -98,5 +98,35 @@ struct NotificationSchedulerTests {
         #expect(await center.addCount == coordinator.lastPlan.count)
         #expect(await center.badge == 1)
     }
-}
 
+    /// P2-10a: a kind switched off in Settings leaves the pending requests on the next refresh, and comes back with
+    /// the switch.
+    @Test func switchingADailyOffRemovesItsPendingRequests() async throws {
+        let env = try ServiceTestEnvironment()
+        let milk = try await env.makeProduct("Milk")
+        for offset in [1, 3, 6] { try env.stock(milk, 1, expiresInDays: offset) }
+        let suite = "NotificationSchedulerTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = NotificationPreferences(defaults: defaults)
+        let center = FakeNotificationCenter()
+        let coordinator = ExpiryNotificationCoordinator(context: env.context, center: center, preferences: preferences,
+                                                        calendar: ServiceTestEnvironment.budapest, locale: Self.en,
+                                                        debounce: .zero, now: { ServiceTestEnvironment.fixedNow })
+        func pending(_ prefix: String) async -> [String] { Array(await center.identifiers).filter { $0.hasPrefix(prefix) } }
+
+        await coordinator.refresh()
+        #expect(await !pending(NotificationPlanner.dailyPrefix).isEmpty)
+        #expect(await !pending(NotificationPlanner.weeklyPrefix).isEmpty)
+
+        preferences.set(.weekly)
+        await coordinator.refresh()
+        #expect(await pending(NotificationPlanner.dailyPrefix).isEmpty)
+        #expect(await !pending(NotificationPlanner.weeklyPrefix).isEmpty)
+        #expect(await center.badge == 3, "the badge does not depend on the switches")
+
+        preferences.set(.all)
+        await coordinator.refresh()
+        #expect(await !pending(NotificationPlanner.dailyPrefix).isEmpty)
+    }
+}

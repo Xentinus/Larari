@@ -30,6 +30,8 @@ public final class ServiceContainer {
     public let shoppingActivity: ShoppingActivityCoordinator
     /// Whether purchases go into inventory by default (P4-07): the purchase sheet and both ticks read it.
     public let purchaseDefaults: PurchaseDefaults
+    /// The daily and weekly summary switches (P2-10a), read by `notifications` on every refresh.
+    public let notificationPreferences: NotificationPreferences
     /// The widgets' App Group snapshot (N-05). Nil in local mode, under UI tests and in package tests.
     public let widgetSnapshots: WidgetSnapshotCoordinator?
     /// Export and import. Nil only in package tests that build the container without persistence.
@@ -62,7 +64,8 @@ public final class ServiceContainer {
                 widgetStore: WidgetSnapshotStore? = nil,
                 widgetQueue: WidgetTickQueue? = nil,
                 reloadWidgets: @escaping @MainActor () -> Void = {},
-                purchaseDefaults: PurchaseDefaults = PurchaseDefaults(defaults: .standard)) {
+                purchaseDefaults: PurchaseDefaults = PurchaseDefaults(defaults: .standard),
+                notificationPreferences: NotificationPreferences = NotificationPreferences(defaults: .standard)) {
         let pending = PendingDeletions()
         pendingDeletions = pending
         // When sharing is given, its permission check is every service's canEdit (read-only households).
@@ -101,8 +104,9 @@ public final class ServiceContainer {
                                         location: locationAuthorizer)
         self.storeSearch = storeSearch
         self.purchaseDefaults = purchaseDefaults
+        self.notificationPreferences = notificationPreferences
         notifications = ExpiryNotificationCoordinator(
-            context: context, center: notificationCenter,
+            context: context, center: notificationCenter, preferences: notificationPreferences,
             locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"))
         storeReminders = StoreReminderCoordinator(
             context: context, center: notificationCenter, search: storeSearch, location: locationAuthorizer,

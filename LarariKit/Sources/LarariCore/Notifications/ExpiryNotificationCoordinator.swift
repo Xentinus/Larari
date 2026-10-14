@@ -2,7 +2,8 @@ import CoreData
 import Foundation
 import Observation
 
-/// Recomputes the notification schedule and the badge. Trigger names are the hooks P5-04 uses.
+/// Recomputes the notification schedule and the badge. Trigger names are the hooks P5-04 uses. Every refresh reads
+/// the summary switches (P2-10a), so a kind switched off in Settings leaves the schedule on the next refresh.
 @MainActor
 @Observable
 public final class ExpiryNotificationCoordinator {
@@ -16,17 +17,21 @@ public final class ExpiryNotificationCoordinator {
     private let context: NSManagedObjectContext
     private let center: any NotificationCentering
     private let scheduler: NotificationScheduler
+    private let preferences: NotificationPreferences
     private let calendar: Calendar
     private let locale: Locale
     private let debounce: Duration
     private let now: @MainActor () -> Date
 
-    public init(context: NSManagedObjectContext, center: any NotificationCentering, calendar: Calendar = .current,
+    public init(context: NSManagedObjectContext, center: any NotificationCentering,
+                preferences: NotificationPreferences = NotificationPreferences(defaults: .standard),
+                calendar: Calendar = .current,
                 locale: Locale = .current, debounce: Duration = .milliseconds(500),
                 now: @escaping @MainActor () -> Date = { .now }) {
         self.context = context
         self.center = center
         self.scheduler = NotificationScheduler(center: center)
+        self.preferences = preferences
         self.calendar = calendar
         self.locale = locale
         self.debounce = debounce
@@ -37,7 +42,8 @@ public final class ExpiryNotificationCoordinator {
         let date = now()
         let snapshots = (try? BadgeCounter.snapshots(in: context, now: date, calendar: calendar)) ?? []
         let count = (try? BadgeCounter.count(in: context, now: date, calendar: calendar)) ?? 0
-        let plan = NotificationPlanner.plan(items: snapshots, now: date, calendar: calendar, locale: locale)
+        let plan = NotificationPlanner.plan(items: snapshots, now: date, calendar: calendar, locale: locale,
+                                            kinds: preferences.kinds)
         lastPlan = await scheduler.reschedule(plan)
         try? await center.setBadgeCount(count)
         lastBadgeCount = count

@@ -36,7 +36,8 @@ public struct PlannedNotification: Sendable, Equatable {
     }
 }
 
-/// Pure: expiry snapshots in, summary notifications out (spec §6.5). Never per item, never over 64.
+/// Pure: expiry snapshots in, summary notifications out (spec §6.5). Never per item, never over 64. `kinds` leaves out
+/// the dailies or the weeklies the user switched off (P2-10a).
 public enum NotificationPlanner {
     public static let maxPending = 64
     public static let defaultHorizonDays = 14
@@ -46,7 +47,8 @@ public enum NotificationPlanner {
     public static let namesShown = 3
 
     public static func plan(items: [ExpirySnapshot], now: Date, calendar: Calendar, locale: Locale,
-                            horizonDays: Int = defaultHorizonDays) -> [PlannedNotification] {
+                            horizonDays: Int = defaultHorizonDays,
+                            kinds: NotificationKinds = .all) -> [PlannedNotification] {
         let today = calendar.startOfDay(for: now)
         let byDay = Dictionary(grouping: items) { calendar.startOfDay(for: $0.expiresAt) }
         func day(_ offset: Int, from start: Date = today) -> Date? { calendar.date(byAdding: .day, value: offset, to: start) }
@@ -60,7 +62,7 @@ public enum NotificationPlanner {
 
             let todays = byDay[date] ?? []
             let tomorrows = day(1, from: date).flatMap { byDay[$0] } ?? []
-            if !todays.isEmpty || !tomorrows.isEmpty {
+            if kinds.contains(.daily), !todays.isEmpty || !tomorrows.isEmpty {
                 let key = switch (todays.isEmpty, tomorrows.isEmpty) {
                 case (false, false): "notification.daily.todayAndTomorrow %lld"
                 case (false, true): "notification.daily.today %lld"
@@ -70,7 +72,7 @@ public enum NotificationPlanner {
                                           title: "notification.daily.title", countKey: key, items: todays + tomorrows))
             }
 
-            if calendar.component(.weekday, from: date) == 2 {                 // Monday in the Gregorian calendar
+            if kinds.contains(.weekly), calendar.component(.weekday, from: date) == 2 {  // Monday (Gregorian)
                 let week = (0..<7).compactMap { day($0, from: date) }.flatMap { byDay[$0] ?? [] }
                 if !week.isEmpty {
                     weekly.append(notification(prefix: weeklyPrefix, day: date, fire: fire, calendar: calendar, locale: locale,

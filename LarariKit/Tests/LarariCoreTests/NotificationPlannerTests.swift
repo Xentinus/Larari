@@ -77,6 +77,21 @@ struct NotificationPlannerTests {
         #expect(dailies.map(\.identifier) == ["daily-2026-09-28", "daily-2026-09-29", "daily-2026-09-30", "daily-2026-10-01"])
     }
 
+    /// P2-10a: the Settings switches leave out a kind; both on is the plan before the switches existed.
+    @Test func kindsLeaveOutTheSwitchedOffSummaries() {
+        let items = [Self.item("Yogurt", Self.date(2026, 9, 29)), Self.item("Ham", Self.date(2026, 10, 1)),
+                     Self.item("Jam", Self.date(2026, 10, 10))]
+        func plan(_ kinds: NotificationKinds) -> [String] {
+            NotificationPlanner.plan(items: items, now: Self.morning, calendar: Self.budapest, locale: Self.en,
+                                     kinds: kinds).map(\.identifier)
+        }
+        #expect(plan(.all) == Self.plan(items).map(\.identifier))
+        #expect(!plan(.daily).isEmpty)
+        #expect(plan(.daily).allSatisfy { $0.hasPrefix(NotificationPlanner.dailyPrefix) })
+        #expect(plan(.weekly) == ["weekly-2026-09-28", "weekly-2026-10-05"])
+        #expect(plan([]).isEmpty)
+    }
+
     /// The body only says what is wrong; a tap shows the items (user request, 2026-09-26). The tap opens the space
     /// with most of the items.
     @Test func bodyHasNoNamesAndTheTargetIsTheSpaceWithMostItems() {
