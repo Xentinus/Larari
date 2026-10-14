@@ -29,12 +29,10 @@ struct IntroductionModelTests {
         return defaults
     }
 
-    /// P1-10a (user pick 2026-09-26): free comes right after welcome, privacy right before notifications;
-    /// notifications stays last, because Get started asks for the notification permission. P4-07 (I-A) asks about
-    /// purchases right after shopping.
-    @Test func hasEightPagesInSpecOrder() {
-        #expect(IntroductionPage.allCases == [.welcome, .free, .inventory, .shopping, .purchase, .spaces, .privacy,
-                                              .notifications])
+    /// P1-10b (user picks A, X, 2026-10-14): the Apple Welcome page, the purchase question (P4-07), the summary
+    /// choice (P2-10a), then the store reminders (P4-06); each permission is asked on its own page.
+    @Test func hasFourPagesInOrder() {
+        #expect(IntroductionPage.allCases == [.welcome, .purchase, .notifications, .stores])
     }
 
     @Test func showsOnFirstLaunch() {
@@ -47,7 +45,7 @@ struct IntroductionModelTests {
     @Test func nextWalksToTheLastPageAndStops() {
         let model = IntroductionModel(defaults: freshDefaults(), notifications: FakeNotificationAuthorizer())
         for _ in 0..<10 { model.next() }
-        #expect(model.currentPage == .notifications)
+        #expect(model.currentPage == .stores)
         #expect(model.isOnLastPage)
     }
 
@@ -133,57 +131,143 @@ struct IntroductionModelTests {
         #expect(!IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer()).addsToInventory)
     }
 
-    // MARK: P2-10a summary choice (G-A, D-B)
+    // MARK: P2-10a summary choice, the third page since P1-10b (X: "Next" asks, "Not now" turns them off)
 
-    @Test func allowedShowsTheSummaryChoiceAndDoneWritesIt() async {
+    @Test func allowedWritesTheChoiceAndMovesOn() async {
         let defaults = freshDefaults()
-        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer(granted: true))
+        let notifications = FakeNotificationAuthorizer(granted: true)
+        let model = IntroductionModel(defaults: defaults, notifications: notifications)
+        model.currentPage = .notifications
         #expect(model.summaryChoice == .all, "both is preselected")
-        await model.finish()
-        #expect(model.showsSummaryChoice)
-        #expect(model.shouldShow, "the introduction stays under the sheet")
-
         model.summaryChoice = .daily
-        model.confirmSummaryChoice()
-        #expect(!model.showsSummaryChoice)
-        model.summaryChoiceClosed()                     // the sheet's onDismiss
-        #expect(!model.shouldShow)
-        #expect(defaults.bool(forKey: IntroductionModel.defaultsKey))
+        await model.allowNotifications()
+
+        #expect(await notifications.requests == 1)
+        #expect(model.currentPage == .stores)
+        #expect(model.shouldShow, "the store page is still ahead")
         #expect(defaults.object(forKey: NotificationPreferences.dailyKey) as? Bool == true)
         #expect(defaults.object(forKey: NotificationPreferences.weeklyKey) as? Bool == false)
     }
 
-    @Test func swipingTheChoiceAwayKeepsBoth() async {
+    @Test func allowedWithBothLeavesBothOn() async {
         let defaults = freshDefaults()
         let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer(granted: true))
-        await model.finish()
-        model.summaryChoice = .weekly
-        model.summaryChoiceClosed()
-        #expect(!model.shouldShow)
-        #expect(defaults.object(forKey: NotificationPreferences.dailyKey) == nil)
+        model.currentPage = .notifications
+        await model.allowNotifications()
         #expect(NotificationPreferences(defaults: defaults).kinds == .all)
     }
 
-    @Test func deniedShowsNoChoiceAndLeavesTheSwitches() async {
+    @Test func deniedWritesNoChoiceAndMovesOn() async {
         for notifications in [FakeNotificationAuthorizer(granted: false), FakeNotificationAuthorizer(fails: true)] {
             let defaults = freshDefaults()
             let model = IntroductionModel(defaults: defaults, notifications: notifications)
-            await model.finish()
-            #expect(!model.showsSummaryChoice)
-            #expect(!model.shouldShow)
+            model.currentPage = .notifications
+            model.summaryChoice = .weekly
+            await model.allowNotifications()
+            #expect(model.currentPage == .stores)
             #expect(defaults.object(forKey: NotificationPreferences.dailyKey) == nil)
             #expect(defaults.object(forKey: NotificationPreferences.weeklyKey) == nil)
         }
     }
 
-    @Test func skipAsksNoChoiceAndLeavesTheSwitches() async {
+    @Test func swipingBackAndChangingTheChoiceRewritesIt() async {
         let defaults = freshDefaults()
         let notifications = FakeNotificationAuthorizer(granted: true)
         let model = IntroductionModel(defaults: defaults, notifications: notifications)
-        model.skip()
-        #expect(!model.showsSummaryChoice)
+        model.currentPage = .notifications
+        await model.allowNotifications()
+        model.currentPage = .notifications
+        model.summaryChoice = .weekly
+        await model.allowNotifications()
+        #expect(await notifications.requests == 1)
+        #expect(model.currentPage == .stores)
+        #expect(NotificationPreferences(defaults: defaults).kinds == .weekly)
+    }
+
+    @Test func allowNotificationsAsksOnce() async {
+        let notifications = FakeNotificationAuthorizer()
+        let model = IntroductionModel(defaults: freshDefaults(), notifications: notifications)
+        model.currentPage = .notifications
+        async let first: Void = model.allowNotifications()
+        async let second: Void = model.allowNotifications()
+        _ = await (first, second)
+        await model.finish()
+        #expect(await notifications.requests == 1, "Get started does not ask again")
+    }
+
+    @Test func notNowTurnsTheSummariesOffAndRemembersToAskLater() async {
+        let defaults = freshDefaults()
+        let notifications = FakeNotificationAuthorizer()
+        let model = IntroductionModel(defaults: defaults, notifications: notifications)
+        model.currentPage = .notifications
+        model.declineNotifications()
+
         #expect(await notifications.requests == 0)
+        #expect(model.currentPage == .stores)
+        #expect(NotificationPreferences(defaults: defaults).kinds == [])
+        #expect(PermissionFollowUpFlags(defaults: defaults).asksNotifications)
+    }
+
+    // MARK: P4-06 store reminders, the last page (P1-10b, X)
+
+    @Test func getStartedTurnsStoreRemindersOnAndAsksForLocation() async {
+        let defaults = freshDefaults()
+        let location = FakeLocation()
+        let model = IntroductionModel(defaults: defaults, notifications: FakeNotificationAuthorizer(),
+                                      location: location)
+        await model.finish()
+
+        #expect(location.requests == 1)
+        #expect(StoreReminderPreference(defaults: defaults).isEnabled)
+        #expect(defaults.object(forKey: StoreReminderPreference.key) as? Bool == true)
+        #expect(!model.shouldShow)
+    }
+
+    @Test func getStartedAsksForNotificationsWhenThirdPageSaidNotNow() async {
+        let defaults = freshDefaults()
+        let notifications = FakeNotificationAuthorizer()
+        let model = IntroductionModel(defaults: defaults, notifications: notifications, location: FakeLocation())
+        model.currentPage = .notifications
+        model.declineNotifications()
+        await model.finish()
+
+        #expect(await notifications.requests == 1, "store reminders are notifications too")
+        #expect(!PermissionFollowUpFlags(defaults: defaults).asksNotifications, "asked now, never again later")
+        #expect(NotificationPreferences(defaults: defaults).kinds == [], "the summaries stay off")
+    }
+
+    @Test func getStartedWithoutLocationStillFinishes() async {
+        let model = IntroductionModel(defaults: freshDefaults(), notifications: FakeNotificationAuthorizer())
+        await model.finish()
+        #expect(!model.shouldShow)
+    }
+
+    @Test func storeNotNowTurnsRemindersOffAndRemembersToAskLater() async {
+        let defaults = freshDefaults()
+        let location = FakeLocation()
+        let notifications = FakeNotificationAuthorizer()
+        let model = IntroductionModel(defaults: defaults, notifications: notifications, location: location)
+        model.declineStoreReminders()
+
+        #expect(location.requests == 0)
+        #expect(await notifications.requests == 0)
+        #expect(!StoreReminderPreference(defaults: defaults).isEnabled)
+        #expect(PermissionFollowUpFlags(defaults: defaults).asksLocation)
+        #expect(!model.shouldShow)
+    }
+
+    @Test func skipAsksNoChoiceAndLeavesTheSwitches() async {
+        let defaults = freshDefaults()
+        let notifications = FakeNotificationAuthorizer(granted: true)
+        let location = FakeLocation()
+        let model = IntroductionModel(defaults: defaults, notifications: notifications, location: location)
+        model.summaryChoice = .daily
+        model.skip()
+        #expect(await notifications.requests == 0)
+        #expect(location.requests == 0)
         #expect(defaults.object(forKey: NotificationPreferences.dailyKey) == nil)
+        #expect(defaults.object(forKey: StoreReminderPreference.key) == nil)
+        #expect(!PermissionFollowUpFlags(defaults: defaults).asksNotifications)
     }
 
     @Test func theChoiceStartsFromTheStoredSwitches() {
