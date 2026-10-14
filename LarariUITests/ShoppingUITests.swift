@@ -80,9 +80,11 @@ final class ShoppingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Undo"].waitForExistence(timeout: 3))
     }
 
+    /// Inventory starts by location here: two lots in two places are two cards only in that grouping (by name, the
+    /// default since P2-08e, shows one card per product).
     @MainActor
     func testPurchaseInTwoLotsWithARecentStore() {
-        let app = XCUIApplication.launchedOnShoppingTab()
+        let app = XCUIApplication.launchedOnShoppingTab(extraArguments: ["-uiTestInventoryGrouping", "location"])
         app.createShoppingList(named: "Weekly")
         app.addShoppingItem("Napkins")
 
