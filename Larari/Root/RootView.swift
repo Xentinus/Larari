@@ -108,7 +108,8 @@ struct RootView: View {
                     }
                     .environment(services)
                     .environment(services.storeDirectory)
-                    .expiryNotifications(services.notifications, context: services.context)
+                    .expiryNotifications(services.notifications, context: services.context,
+                                         preferences: services.notificationPreferences)
                     .storeReminders(services.storeReminders, context: services.context)
                     .shoppingActivity(app, coordinator: services.shoppingActivity, context: services.context)
             } else if app.bootstrapError != nil {

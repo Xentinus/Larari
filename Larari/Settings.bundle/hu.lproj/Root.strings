@@ -1,3 +1,7 @@
+"NOTIFY_GROUP" = "Értesítések";
+"DAILY_TOGGLE" = "Napi összefoglaló";
+"WEEKLY_TOGGLE" = "Heti áttekintés";
+"NOTIFY_FOOTER" = "Napi: reggel 7-kor, ha ma vagy holnap lejár valami. Heti: hétfő reggel a hét lejáró tételei. Az értesítések engedélye a Beállítások ▸ Értesítések ▸ Larari alatt van.";
 "STORE_GROUP" = "Bevásárlás";
 "STORE_TOGGLE" = "Bolti emlékeztető";
 "STORE_FOOTER" = "Ha egy olyan áruházlánc boltjához érsz, amelyhez tétel vár a listádon, a Larari szól. A helyzeted az iPhone-on marad.";

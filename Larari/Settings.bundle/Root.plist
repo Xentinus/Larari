@@ -10,6 +10,34 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
+			<string>NOTIFY_GROUP</string>
+			<key>FooterText</key>
+			<string>NOTIFY_FOOTER</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>DAILY_TOGGLE</string>
+			<key>Key</key>
+			<string>dailySummaryEnabled</string>
+			<key>DefaultValue</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>WEEKLY_TOGGLE</string>
+			<key>Key</key>
+			<string>weeklySummaryEnabled</string>
+			<key>DefaultValue</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
 			<string>STORE_GROUP</string>
 			<key>FooterText</key>
 			<string>STORE_FOOTER</string>

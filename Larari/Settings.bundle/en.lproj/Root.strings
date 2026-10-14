@@ -1,3 +1,7 @@
+"NOTIFY_GROUP" = "Notifications";
+"DAILY_TOGGLE" = "Daily summary";
+"WEEKLY_TOGGLE" = "Weekly overview";
+"NOTIFY_FOOTER" = "Daily: at 7 am when something expires today or tomorrow. Weekly: Monday morning, what expires that week. Permission is under Settings ▸ Notifications ▸ Larari.";
 "STORE_GROUP" = "Shopping";
 "STORE_TOGGLE" = "Store reminders";
 "STORE_FOOTER" = "When you arrive at a shop of a chain with items waiting on your list, Larari reminds you. Your location stays on this iPhone.";

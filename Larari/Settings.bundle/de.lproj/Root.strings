@@ -1,3 +1,7 @@
+"NOTIFY_GROUP" = "Mitteilungen";
+"DAILY_TOGGLE" = "Tägliche Übersicht";
+"WEEKLY_TOGGLE" = "Wöchentliche Übersicht";
+"NOTIFY_FOOTER" = "Täglich: um 7 Uhr, wenn heute oder morgen etwas abläuft. Wöchentlich: montags früh, was in dieser Woche abläuft. Die Erlaubnis findest du unter Einstellungen ▸ Mitteilungen ▸ Larari.";
 "STORE_GROUP" = "Einkaufen";
 "STORE_TOGGLE" = "Erinnerung im Geschäft";
 "STORE_FOOTER" = "Wenn du ein Geschäft einer Kette erreichst, für die Artikel auf deiner Liste warten, erinnert dich Larari. Dein Standort bleibt auf diesem iPhone.";
