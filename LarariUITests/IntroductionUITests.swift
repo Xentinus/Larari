@@ -1,11 +1,10 @@
 import XCTest
 
-/// P1-10 introduction, animated in P1-10a (user pick 1I · 2C · 3B · 4B · 5C · 8H · 6C, 2026-09-26).
+/// P1-10 introduction, four pages since P1-10b (user picks A and X, 2026-10-14): Apple Welcome rows, the purchase
+/// question, the summary choice, the store reminders; the last two ask for their permission and have "Not Now".
 final class IntroductionUITests: XCTestCase {
     /// Titles after the welcome page, in order.
-    private let laterTitles = ["Completely free", "Know what's at home", "Shopping made simple",
-                               "When you buy something…", "Personal and shared", "Your data is yours",
-                               "Stay ahead of expiry dates"]
+    private let laterTitles = ["When you buy something…", "Stay ahead of expiry dates", "Remind you at the store?"]
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -20,12 +19,13 @@ final class IntroductionUITests: XCTestCase {
     }
 
     @MainActor
-    func testFreeIsTheSecondPage() throws {
+    func testWelcomeListsWhatLarariDoes() throws {
         let app = launch()
         XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
-        app.buttons["Next"].tap()
-        XCTAssertTrue(app.staticTexts["Completely free"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Every feature is for everyone, with no subscription, no ads and no premium tier."].exists)
+        for title in ["Know what's at home", "Shopping made simple", "Personal and shared", "Your data is yours"] {
+            XCTAssertTrue(app.staticTexts[title].exists, "Row \(title) not shown")
+        }
+        XCTAssertTrue(app.staticTexts["Stored in your own iCloud, so you need an iCloud account. Free, with no ads and no tracking."].exists)
     }
 
     @MainActor
@@ -39,7 +39,8 @@ final class IntroductionUITests: XCTestCase {
             app.swipeLeft()
             XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 3), "Page \(title) not shown")
         }
-        XCTAssertFalse(app.buttons["Skip"].exists)
+        XCTAssertFalse(app.buttons["Skip"].exists, "the permission pages have Not Now instead")
+        XCTAssertTrue(app.buttons["Not Now"].exists)
 
         app.buttons["Get started"].tap()
         XCTAssertTrue(app.staticTexts["iCloud is required"].waitForExistence(timeout: 10))
@@ -71,53 +72,36 @@ final class IntroductionUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Next"].isHittable)
         app.buttons["Next"].tap()
-        XCTAssertTrue(app.staticTexts["Completely free"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["When you buy something…"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["Next"].isHittable)
     }
 
-    /// Device review aid (previews time out in Xcode 27): one screenshot per page after its scene has finished.
+    /// Device review aid (previews time out in Xcode 27): one screenshot per page, portrait and landscape.
     /// Export with `xcrun xcresulttool export attachments`.
     @MainActor
-    func testEveryPageFinishesItsScene() throws {
+    func testEveryPageScreenshot() throws {
         let app = launch()
+        defer { XCUIDevice.shared.orientation = .portrait }
         XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
-        let names = ["welcome", "free", "inventory", "shopping", "purchase", "spaces", "privacy", "notifications"]
-        for (index, name) in names.enumerated() {
+        for (index, name) in ["welcome", "purchase", "notifications", "stores"].enumerated() {
             if index > 0 {
                 app.buttons["Next"].tap()
                 XCTAssertTrue(app.staticTexts[laterTitles[index - 1]].waitForExistence(timeout: 3))
             }
-            sleep(4)
-            let shot = XCTAttachment(screenshot: app.screenshot())
-            shot.name = "intro-\(index + 1)-\(name)"
-            shot.lifetime = .keepAlways
-            add(shot)
+            for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+                XCUIDevice.shared.orientation = orientation
+                sleep(1)
+                let shot = XCTAttachment(screenshot: app.screenshot())
+                shot.name = "intro-\(index + 1)-\(name)-\(orientation == .portrait ? "portrait" : "landscape")"
+                shot.lifetime = .keepAlways
+                add(shot)
+            }
+            XCUIDevice.shared.orientation = .portrait
         }
         XCTAssertTrue(app.buttons["Get started"].exists)
     }
 
-    /// Device review aid (P2-08d): the three card pages in landscape, where the scene is only 260 pt high.
-    @MainActor
-    func testCardPagesInLandscape() throws {
-        let app = launch()
-        defer { XCUIDevice.shared.orientation = .portrait }
-        XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
-        XCUIDevice.shared.orientation = .landscapeLeft
-        for (index, name) in ["welcome", "free", "inventory", "shopping"].enumerated() {
-            if index > 0 {
-                app.buttons["Next"].tap()
-                XCTAssertTrue(app.staticTexts[laterTitles[index - 1]].waitForExistence(timeout: 3))
-            }
-            guard name != "free" else { continue }
-            sleep(4)
-            let shot = XCTAttachment(screenshot: app.screenshot())
-            shot.name = "intro-landscape-\(name)"
-            shot.lifetime = .keepAlways
-            add(shot)
-        }
-    }
-
-    /// P4-07 (I-A): the page after Shopping asks whether purchases go into inventory; the answer is the purchase
+    /// P4-07 (I-A): the page after the welcome asks whether purchases go into inventory; the answer is the purchase
     /// sheet's default.
     @MainActor
     func testThePurchaseQuestionSetsThePurchaseSheetDefault() throws {
@@ -125,7 +109,7 @@ final class IntroductionUITests: XCTestCase {
                                           extraArguments: ["-resetIntroduction", "-uiTestSeed", "-uiTestSeedStoreItems"])
         app.launch()
         XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
-        for _ in 0..<4 { app.buttons["Next"].tap() }
+        app.buttons["Next"].tap()
         XCTAssertTrue(app.staticTexts["When you buy something…"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["You can change this any time in Settings ▸ Larari."].exists)
         let inventory = app.buttons["introduction.purchase.inventory"]
@@ -147,11 +131,11 @@ final class IntroductionUITests: XCTestCase {
         XCTAssertEqual(toggle.value as? String, "0", "the introduction's answer is the sheet's default")
     }
 
-    /// P2-10a (G-A): "Get started" with notifications allowed asks for daily, weekly or both; "Done" writes the
-    /// Settings switches.
+    /// P2-10a on the third page (P1-10b, X): Next asks for permission and, allowed, writes the choice; Get started on
+    /// the store page turns the store reminders on.
     @MainActor
-    func testAllowedNotificationsAskWhichSummaries() throws {
-        let app = launchToSummaryChoice()
+    func testAllowedNotificationsWriteTheSummaryChoice() throws {
+        let app = launchToSummaryChoice(granted: true)
         XCTAssertTrue(app.staticTexts["We check in at 7 am, and only when something expires."].exists)
         let daily = app.buttons["introduction.summary.daily"]
         let weekly = app.buttons["introduction.summary.weekly"]
@@ -162,34 +146,54 @@ final class IntroductionUITests: XCTestCase {
         XCTAssertTrue(weekly.isSelected)
         XCTAssertFalse(both.isSelected)
 
-        app.buttons["introduction.summary.done"].tap()
+        app.buttons["introduction.notifications.next"].tap()
+        XCTAssertTrue(app.staticTexts["Remind you at the store?"].waitForExistence(timeout: 3))
+        app.buttons["Get started"].tap()
         XCTAssertTrue(app.navigationBars["Inventory"].waitForExistence(timeout: 10))
         let kinds = app.staticTexts["uiTest.notificationKinds"]
         XCTAssertTrue(kinds.waitForExistence(timeout: 5))
         XCTAssertEqual(kinds.label, "weekly")
+        XCTAssertEqual(app.staticTexts["uiTest.storeReminders"].label, "on")
     }
 
-    /// P2-10a: swiping the choice away closes the introduction and keeps both summaries on.
+    /// P2-10a (D-B): declined, the choice is not written and both summaries stay on.
     @MainActor
-    func testSwipingTheSummaryChoiceAwayKeepsBoth() throws {
-        let app = launchToSummaryChoice()
+    func testDeclinedNotificationsKeepBoth() throws {
+        let app = launchToSummaryChoice(granted: false)
         app.buttons["introduction.summary.daily"].tap()
-        let grabber = app.buttons["Sheet Grabber"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        grabber.press(forDuration: 0.1,
-                      thenDragTo: app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+        app.buttons["introduction.notifications.next"].tap()
+        XCTAssertTrue(app.staticTexts["Remind you at the store?"].waitForExistence(timeout: 3))
+        app.buttons["Get started"].tap()
         XCTAssertTrue(app.navigationBars["Inventory"].waitForExistence(timeout: 10))
-        XCTAssertEqual(app.staticTexts["uiTest.notificationKinds"].label, "daily weekly")
+        let kinds = app.staticTexts["uiTest.notificationKinds"]
+        XCTAssertTrue(kinds.waitForExistence(timeout: 5))
+        XCTAssertEqual(kinds.label, "daily weekly")
+    }
+
+    /// P1-10b (X): "Not Now" on both permission pages turns the summaries and the store reminders off.
+    @MainActor
+    func testNotNowTurnsEverythingOff() throws {
+        let app = launchToSummaryChoice(granted: true)
+        app.buttons["introduction.notifications.notNow"].tap()
+        XCTAssertTrue(app.staticTexts["Remind you at the store?"].waitForExistence(timeout: 3))
+        app.buttons["introduction.stores.notNow"].tap()
+        XCTAssertTrue(app.navigationBars["Inventory"].waitForExistence(timeout: 10))
+        let kinds = app.staticTexts["uiTest.notificationKinds"]
+        XCTAssertTrue(kinds.waitForExistence(timeout: 5))
+        XCTAssertEqual(kinds.label, "none")
+        XCTAssertEqual(app.staticTexts["uiTest.storeReminders"].label, "off")
     }
 
     @MainActor
-    private func launchToSummaryChoice() -> XCUIApplication {
+    private func launchToSummaryChoice(granted: Bool) -> XCUIApplication {
         let app = XCUIApplication.larari(skipIntroduction: false,
-                                          extraArguments: ["-resetIntroduction", "-uiTestNotificationsGranted"])
+                                          extraArguments: ["-resetIntroduction"]
+                                            + (granted ? ["-uiTestNotificationsGranted"] : []))
         app.launch()
         XCTAssertTrue(app.staticTexts["Welcome to Larari"].waitForExistence(timeout: 10))
-        while !app.buttons["Get started"].exists { app.buttons["Next"].tap() }
-        app.buttons["Get started"].tap()
-        XCTAssertTrue(app.staticTexts["When should we notify you?"].waitForExistence(timeout: 5))
+        for _ in 0..<2 { app.buttons["introduction.next"].tap() }
+        XCTAssertTrue(app.staticTexts["Stay ahead of expiry dates"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["Skip"].exists)
         return app
     }
 }

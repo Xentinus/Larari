@@ -7,7 +7,7 @@ final class AccessibilityAuditTests: XCTestCase {
     enum Screen: String {
         case inventory, stockSheet, storePicker, search, productDetail, productForm, shopping, listManager, addItem, purchase,
              inventoryByName, inventoryByExpiry, shoppingByName, productHistory, categoryPicker, spaceSettings,
-             introduction, introductionPurchase, summaryChoice, gate
+             introduction, introductionPurchase, introductionNotifications, introductionStores, gate
     }
 
     enum Mode: String, CaseIterable {
@@ -57,8 +57,9 @@ final class AccessibilityAuditTests: XCTestCase {
             let tabs = app.tabBars.firstMatch
             tabBar = tabs.exists ? tabs.frame : nil
             let dots = app.pageIndicators.firstMatch
-            let next = app.buttons["introduction.next"]
-            introductionControls = [dots, next].filter(\.exists).map(\.frame)
+            let controls = ["introduction.next", "introduction.notifications.next", "introduction.notifications.notNow",
+                            "introduction.getStarted", "introduction.stores.notNow"].map { app.buttons[$0] }
+            introductionControls = ([dots] + controls).filter(\.exists).map(\.frame)
             // A form sheet is centred vertically, so it ends as far above the window's bottom as it starts below
             // the top.
             if isPad, let bar = narrowest, bar.width < window.width - 1 {
@@ -127,9 +128,10 @@ final class AccessibilityAuditTests: XCTestCase {
             if issue.auditType == .contrast, !contentArea.contains(frame) { return true }
             // Text that runs past the screen edge or under a bar is cut by the scroll view, not by its own frame.
             if issue.auditType == .textClipped, !contentArea.contains(frame) { return true }
-            // The purchase page's text scrolled partly under the page dots or Next (the controls themselves, wholly
-            // inside that area, are still audited).
-            if screen == .introductionPurchase, [.contrast, .textClipped].contains(issue.auditType),
+            // An introduction page's text scrolled partly under the page dots, Next or Get started (the controls
+            // themselves, wholly inside that area, are still audited). In landscape every page scrolls (P1-10b).
+            if [.introduction, .introductionPurchase, .introductionNotifications, .introductionStores].contains(screen),
+               [.contrast, .textClipped].contains(issue.auditType),
                introductionControls.contains(where: { $0.intersects(frame) }),
                !introductionControls.contains(where: { $0.contains(frame) }) {
                 return true
@@ -186,7 +188,8 @@ final class AccessibilityAuditTests: XCTestCase {
     @MainActor func testSpaceSettings() { audit(.spaceSettings) }
     @MainActor func testIntroduction() { audit(.introduction) }
     @MainActor func testIntroductionPurchase() { audit(.introductionPurchase) }
-    @MainActor func testSummaryChoice() { audit(.summaryChoice) }
+    @MainActor func testIntroductionNotifications() { audit(.introductionNotifications) }
+    @MainActor func testIntroductionStores() { audit(.introductionStores) }
     @MainActor func testGate() { audit(.gate) }
 
     @MainActor
@@ -248,8 +251,8 @@ final class AccessibilityAuditTests: XCTestCase {
         var extra = ["-uiTestSeed"]
         switch screen {
         case .shopping, .shoppingByName, .listManager, .addItem, .purchase: extra.append("-uiTestSeedStoreItems")
-        case .introduction, .introductionPurchase: extra.append("-resetIntroduction")
-        case .summaryChoice: extra += ["-resetIntroduction", "-uiTestNotificationsGranted"]
+        case .introduction, .introductionPurchase, .introductionNotifications, .introductionStores:
+            extra.append("-resetIntroduction")
         default: break
         }
         if mode == .dark { extra.append("-uiTestDarkMode") }
@@ -261,7 +264,8 @@ final class AccessibilityAuditTests: XCTestCase {
             extra.append("-uiTestIncreaseContrast")
         }
         let app = XCUIApplication.larari(accountState: screen == .gate ? "noAccount" : "available",
-                                          skipIntroduction: ![.introduction, .introductionPurchase, .summaryChoice]
+                                          skipIntroduction: ![.introduction, .introductionPurchase, .introductionNotifications,
+                                                              .introductionStores]
                                             .contains(screen),
                                           extraArguments: extra)
         app.launch()
@@ -503,16 +507,22 @@ final class AccessibilityAuditTests: XCTestCase {
         case .introduction:
             return app.buttons["introduction.skip"].waitForExistence(timeout: 10)
         case .introductionPurchase:
-            // P4-07: the purchase question, the fifth page.
+            // P4-07: the purchase question, the second page (P1-10b).
             guard app.buttons["introduction.next"].waitForExistence(timeout: 10) else { return false }
-            for _ in 0..<4 { app.buttons["introduction.next"].tap() }
+            app.buttons["introduction.next"].tap()
             return app.buttons["introduction.purchase.inventory"].waitForExistence(timeout: 5)
-        case .summaryChoice:
-            // P2-10a: "Get started" with notifications allowed brings up the daily / weekly choice.
+        case .introductionNotifications:
+            // P2-10a: the daily / weekly choice, the third page (P1-10b).
             guard app.buttons["introduction.next"].waitForExistence(timeout: 10) else { return false }
-            while app.buttons["introduction.next"].exists { app.buttons["introduction.next"].tap() }
-            app.buttons["introduction.getStarted"].tap()
-            return app.buttons["introduction.summary.done"].waitForExistence(timeout: 5)
+            for _ in 0..<2 { app.buttons["introduction.next"].tap() }
+            return app.buttons["introduction.summary.both"].waitForExistence(timeout: 5)
+        case .introductionStores:
+            // P4-06: the store reminders, the last page (P1-10b), reached with the third page's Not Now.
+            guard app.buttons["introduction.next"].waitForExistence(timeout: 10) else { return false }
+            for _ in 0..<2 { app.buttons["introduction.next"].tap() }
+            guard app.buttons["introduction.notifications.notNow"].waitForExistence(timeout: 5) else { return false }
+            app.buttons["introduction.notifications.notNow"].tap()
+            return app.buttons["introduction.getStarted"].waitForExistence(timeout: 5)
         case .gate:
             return app.descendants(matching: .any)["accountGate"].waitForExistence(timeout: 10)
         }
