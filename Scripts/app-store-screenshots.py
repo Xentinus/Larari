@@ -45,12 +45,12 @@ CAPTIONS = {
 CALLOUT = {"inventory": 2, "expiry": 1, "shopping": 0, "detail": "largest", "family": "largest"}
 
 
-def cards(shot):
-    """White card rectangles (x0, y0, x1, y1) found down the column at x = 60, above the tab bar."""
+def cards(shot, column=60):
+    """White card rectangles (x0, y0, x1, y1) found down the column at x = `column`, above the tab bar."""
     rgb = shot.convert("RGB")
     found, start = [], None
     for y in range(170, rgb.height - 300):
-        white = rgb.getpixel((60, y)) == (255, 255, 255)
+        white = rgb.getpixel((column, y)) == (255, 255, 255)
         if white and start is None:
             start = y
         elif not white and start is not None:
@@ -461,15 +461,15 @@ def left_caption(canvas, x, top, title, subtitle, style, max_width=1120):
     return y
 
 
-def lifted_card(shot, pick, width, angle=0):
+def lifted_card(shot, pick, width, angle=0, column=60, radius=44):
     """A card cut from the screenshot, scaled to `width`, with rounded corners and an optional tilt."""
-    found = cards(shot)
+    found = cards(shot, column)
     x0, y0, x1, y1 = max(found, key=lambda r: r[3] - r[1]) if pick == "largest" else found[pick]
     card = shot.crop((x0, y0, x1, y1))
     zoom = width / card.width
     card = card.resize((round(card.width * zoom), round(card.height * zoom)), Image.LANCZOS).convert("RGBA")
     framed = Image.new("RGBA", card.size, (0, 0, 0, 0))
-    framed.paste(card, (0, 0), rounded_mask(card.size, 44))
+    framed.paste(card, (0, 0), rounded_mask(card.size, radius))
     if angle:
         framed = framed.rotate(angle, resample=Image.BICUBIC, expand=True)
     return framed
@@ -546,6 +546,151 @@ def panorama(shots_dir, lang, name, text="giant"):
     return [canvas.crop((i * W, 0, (i + 1) * W, H)).convert("RGB") for i in range(count)]
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# iPad 13": 2064 × 2752 frames from the iPad captures (1620 × 2160, same 3:4 ratio).
+
+IPAD_W, IPAD_H = 2064, 2752
+SPLIT_HEADLINES = {"en": "two windows, side by side", "hu": "két ablak egymás mellett",
+                   "de": "Zwei Fenster nebeneinander"}
+
+
+def clean_ipad_status_bar(shot):
+    """Paints over the iPad status bar and draws 9:41 with full Wi-Fi and battery."""
+    shot = shot.convert("RGB")
+    bg = shot.getpixel((5, 50))
+    d = ImageDraw.Draw(shot)
+    d.rectangle((0, 0, shot.width, 46), fill=bg)
+    ink = (0, 0, 0) if sum(bg) / 3 > 128 else (255, 255, 255)
+    d.text((40, 24), "9:41", font=font(28, "Semibold"), fill=ink, anchor="lm")
+    cx, cy = shot.width - 140, 32
+    for r in (24, 16, 8):
+        d.arc((cx - r, cy - r, cx + r, cy + r), start=225, end=315, fill=ink, width=5)
+    d.ellipse((cx - 4, cy - 8, cx + 4, cy), fill=ink)
+    bx, by = shot.width - 104, 13
+    d.rounded_rectangle((bx, by, bx + 52, by + 24), radius=7, outline=ink, width=3)
+    d.rounded_rectangle((bx + 5, by + 5, bx + 47, by + 19), radius=4, fill=ink)
+    d.rounded_rectangle((bx + 55, by + 8, bx + 59, by + 16), radius=2, fill=ink)
+    return shot
+
+
+def tablet(shot, screen_width, style):
+    """The screenshot in a drawn iPad frame (even bezel, rounded screen, front camera dot). RGBA."""
+    scale = screen_width / shot.width
+    screen = shot.resize((screen_width, round(shot.height * scale)), Image.LANCZOS)
+    bezel, radius = round(screen_width * 0.03), round(screen_width * 0.035)
+    w, h = screen.width + 2 * bezel, screen.height + 2 * bezel
+    body = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(body)
+    d.rounded_rectangle((0, 0, w - 1, h - 1), radius=radius + bezel, fill=style["frame"])
+    d.rounded_rectangle((3, 3, w - 4, h - 4), radius=radius + bezel - 3, outline=style["edge"], width=3)
+    body.paste(screen, (bezel, bezel), rounded_mask(screen.size, radius))
+    dot = max(6, bezel // 5)
+    d.ellipse((w / 2 - dot, bezel / 2 - dot, w / 2 + dot, bezel / 2 + dot), fill="#2a2a2e")
+    return body
+
+
+def card_column(shot):
+    """Just inside the cards' left edge: the leftmost x where a long white run starts, plus a margin, so the
+    search column stays clear of the dividers inset inside a card."""
+    rgb = shot.convert("RGB")
+    best = rgb.width
+    for y in range(300, rgb.height - 300, 40):
+        for x in range(0, rgb.width // 2):
+            if all(rgb.getpixel((x + k, y)) == (255, 255, 255) for k in (0, 40, 120, 240)):
+                best = min(best, x)
+                break
+    return best + 14
+
+
+def split_screen(left, right, width, style):
+    """A landscape iPad (`width` px wide) showing two app windows tiled side by side, iPadOS 26 style: a warm
+    wallpaper, the system status bar on top, and each window with its close / minimise / zoom buttons. The windows
+    are the portrait captures without their status bar."""
+    sw, sh = 2160, 1620                       # the landscape screen, in capture pixels
+    screen = gradient((sw, sh), "#d8c3a5", "#a78a66").convert("RGBA")
+    d = ImageDraw.Draw(screen)
+    d.text((44, 26), "9:41", font=font(28, "Semibold"), fill="#ffffff", anchor="lm")
+    bx, by = sw - 104, 14
+    d.rounded_rectangle((bx, by, bx + 52, by + 24), radius=7, outline="#ffffff", width=3)
+    d.rounded_rectangle((bx + 5, by + 5, bx + 47, by + 19), radius=4, fill="#ffffff")
+    gap, top = 18, 60
+    win_w = (sw - 3 * gap) // 2
+    bar = 56                                  # the window's own strip for its buttons
+    for i, shot in enumerate((left, right)):
+        content = shot.crop((0, 46, shot.width, shot.height))
+        scale = win_w / content.width
+        content = content.resize((win_w, round(content.height * scale)), Image.LANCZOS)
+        win_h = min(sh - top - gap, content.height + bar)
+        window = Image.new("RGB", (win_w, win_h), content.getpixel((4, 4)))
+        window.paste(content.crop((0, 0, win_w, win_h - bar)), (0, bar))
+        wd = ImageDraw.Draw(window)
+        for k, color in enumerate(("#ff5f57", "#febc2e", "#28c840")):
+            cx = 36 + k * 30
+            wd.ellipse((cx - 10, 18, cx + 10, 38), fill=color)
+        framed = Image.new("RGBA", (win_w, win_h), (0, 0, 0, 0))
+        framed.paste(window, (0, 0), rounded_mask((win_w, win_h), 34))
+        x = gap + i * (win_w + gap)
+        place_with_shadow(screen, framed, (x, top), blur=24, opacity=0.25)
+    # into a landscape iPad frame
+    scale = width / sw
+    shown = screen.resize((width, round(sh * scale)), Image.LANCZOS)
+    bezel, radius = round(width * 0.025), round(width * 0.03)
+    w, h = shown.width + 2 * bezel, shown.height + 2 * bezel
+    body = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    bd = ImageDraw.Draw(body)
+    bd.rounded_rectangle((0, 0, w - 1, h - 1), radius=radius + bezel, fill=style["frame"])
+    bd.rounded_rectangle((3, 3, w - 4, h - 4), radius=radius + bezel - 3, outline=style["edge"], width=3)
+    body.paste(shown.convert("RGB"), (bezel, bezel), rounded_mask(shown.size, radius))
+    dot = max(6, bezel // 5)
+    bd.ellipse((bezel / 2 - dot, h / 2 - dot, bezel / 2 + dot, h / 2 + dot), fill="#2a2a2e")
+    return body
+
+
+def panorama_ipad(shots_dir, lang, name):
+    """The G2 layout for iPad: five 2064 × 2752 frames cut from one canvas."""
+    global W, H
+    saved = (W, H)
+    W, H = IPAD_W, IPAD_H
+    try:
+        style = PANORAMAS[name]
+        count = len(SCREENS) + 1             # plus the split-screen frame
+        tones = (style["frames"] * count)[:count]
+        total = W * count
+        canvas = Image.new("RGBA", (total, H))
+        for i, (top, bottom) in enumerate(tones):
+            canvas.paste(gradient((W, H), top, bottom), (i * W, 0))
+        shots = {screen: clean_ipad_status_bar(Image.open(os.path.join(shots_dir, f"{lang}-{i + 1}-{screen}.png")))
+                 for i, screen in enumerate(SCREENS)}
+
+        # Frames 1–2: a big tilted iPad across the boundary, the expiring card lifted on frame 2.
+        big = tablet(shots["inventory"], 1700, style)
+        place_with_shadow(canvas, warp(big, tilted_quad(W + 20, 2250, big.width, big.height, -12, 0.92),
+                                       (total, H)), (0, 0), blur=90, opacity=0.3)
+        place_with_shadow(canvas, lifted_card(shots["expiry"], 1, 1650, angle=3,
+                                                    column=card_column(shots["expiry"]), radius=30),
+                          (W + 220, 1500), blur=60)
+
+        # Frames 3–5: straight iPads, one card lifted on each.
+        for i, screen, pick in ((2, "detail", "largest"), (3, "shopping", 0), (4, "family", "largest")):
+            device = tablet(shots[screen], 1560, style)
+            place_with_shadow(canvas, device, (i * W + (W - device.width) // 2, 1000), blur=80, opacity=0.25)
+            card = lifted_card(shots[screen], pick, 1820 if pick == "largest" else 1760,
+                               angle=-2 if i % 2 else 2, column=card_column(shots[screen]), radius=30)
+            place_with_shadow(canvas, card, (i * W + (W - card.width) // 2, 1500), blur=60)
+
+        # Frame 6: two windows tiled on a landscape iPad, slightly turned.
+        split = split_screen(shots["inventory"], shots["shopping"], 1760, style)
+        split = split.rotate(-3, resample=Image.BICUBIC, expand=True)
+        place_with_shadow(canvas, split, (5 * W + (W - split.width) // 2, 880), blur=80, opacity=0.3)
+
+        for i, screen in enumerate(SCREENS):
+            giant_caption(canvas, i * W, 200, HEADLINES[lang][screen], style["title"], max_width=1800)
+        giant_caption(canvas, 5 * W, 200, SPLIT_HEADLINES[lang], style["title"], max_width=1800)
+        return [canvas.crop((i * W, 0, (i + 1) * W, H)).convert("RGB") for i in range(count)]
+    finally:
+        W, H = saved
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("shots")
@@ -554,8 +699,18 @@ def main():
     parser.add_argument("--lang", nargs="+", default=list(CAPTIONS))
     parser.add_argument("--panorama", nargs="*", default=None, help="panorama variants instead of single styles")
     parser.add_argument("--text", nargs="+", default=["giant"], help="scribble, giant or chips")
+    parser.add_argument("--ipad", action="store_true", help="iPad 13\" frames from iPad captures (G2 layout)")
     args = parser.parse_args()
     os.makedirs(args.out, exist_ok=True)
+    if args.ipad:
+        orders = [f"{i + 1}-{screen}" for i, screen in enumerate(SCREENS)] + [f"{len(SCREENS) + 1}-split"]
+        for variant in args.panorama or ["pastel"]:
+            for lang in args.lang:
+                for order, frame in zip(orders, panorama_ipad(args.shots, lang, variant)):
+                    path = os.path.join(args.out, f"ipad-{variant}-{lang}-{order}.png")
+                    frame.save(path, optimize=True)
+                    print(path)
+        return
     if args.panorama is not None:
         orders = [f"{i + 1}-{screen}" for i, screen in enumerate(SCREENS)]
         for variant in args.panorama or list(PANORAMAS):
