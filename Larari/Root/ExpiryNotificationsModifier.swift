@@ -4,19 +4,25 @@ import LarariCore
 import SwiftUI
 
 /// Keeps the 07:00 summaries and the badge current: on foreground, after local saves, after remote changes, and
-/// when a summary switch in Settings ▸ Larari changes while the app runs (P2-10a).
+/// when a summary switch or the Ikonjelvény values in Settings ▸ Larari change while the app runs (P2-10a, P2-10b).
 private struct ExpiryNotificationsModifier: ViewModifier {
     let coordinator: ExpiryNotificationCoordinator
     let context: NSManagedObjectContext
     let preferences: NotificationPreferences
     @Environment(\.scenePhase) private var scenePhase
-    /// The switches as last seen, so other defaults changes (there are many) do not reschedule.
-    @State private var kinds: NotificationKinds?
+    /// The values a refresh depends on, as last seen, so other defaults changes (there are many) do not reschedule.
+    private struct Watched: Equatable {
+        var kinds: NotificationKinds
+        var badge: BadgeContent
+    }
+    @State private var watched: Watched?
+
+    private var current: Watched { Watched(kinds: preferences.kinds, badge: preferences.badge) }
 
     func body(content: Content) -> some View {
         content
             .task {
-                kinds = preferences.kinds
+                watched = current
                 coordinator.scheduleRefresh(.foreground)
             }
             .onChange(of: scenePhase) {
@@ -33,9 +39,9 @@ private struct ExpiryNotificationsModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
                         .receive(on: DispatchQueue.main)) { _ in
-                let current = preferences.kinds
-                guard current != kinds else { return }
-                kinds = current
+                let now = current
+                guard now != watched else { return }
+                watched = now
                 coordinator.scheduleRefresh(.foreground)
             }
     }

@@ -38,6 +38,55 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
+			<string>BADGE_GROUP</string>
+			<key>FooterText</key>
+			<string>BADGE_FOOTER</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>BADGE_EXPIRY</string>
+			<key>Key</key>
+			<string>badgeExpiry</string>
+			<key>DefaultValue</key>
+			<string>soon</string>
+			<key>Titles</key>
+			<array>
+				<string>BADGE_SOON</string>
+				<string>BADGE_CRITICAL</string>
+				<string>BADGE_EXPIRED</string>
+				<string>BADGE_NONE</string>
+			</array>
+			<key>ShortTitles</key>
+			<array>
+				<string>BADGE_SOON_SHORT</string>
+				<string>BADGE_CRITICAL_SHORT</string>
+				<string>BADGE_EXPIRED_SHORT</string>
+				<string>BADGE_NONE</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>soon</string>
+				<string>critical</string>
+				<string>expired</string>
+				<string>off</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>BADGE_SHOPPING</string>
+			<key>Key</key>
+			<string>badgeShoppingEnabled</string>
+			<key>DefaultValue</key>
+			<false/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
 			<string>STORE_GROUP</string>
 			<key>FooterText</key>
 			<string>STORE_FOOTER</string>

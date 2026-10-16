@@ -7,3 +7,14 @@
 "STORE_FOOTER" = "Ha egy olyan áruházlánc boltjához érsz, amelyhez tétel vár a listádon, a Larari szól. A helyzeted az iPhone-on marad.";
 "INVENTORY_TOGGLE" = "Vásárlás a készletbe";
 "INVENTORY_FOOTER" = "Kikapcsolva a megvett tétel csak lekerül a listáról. Egy-egy vásárlásnál így is beteheted a készletbe.";
+"BADGE_GROUP" = "Ikonjelvény";
+"BADGE_EXPIRY" = "Lejáró tételek";
+"BADGE_SOON" = "Lejárt és 14 napon belül";
+"BADGE_SOON_SHORT" = "14 napon belül";
+"BADGE_CRITICAL" = "Lejárt és 3 napon belül";
+"BADGE_CRITICAL_SHORT" = "3 napon belül";
+"BADGE_EXPIRED" = "Csak lejárt";
+"BADGE_EXPIRED_SHORT" = "Lejárt";
+"BADGE_NONE" = "Nincs";
+"BADGE_SHOPPING" = "Bevásárlólista";
+"BADGE_FOOTER" = "Az app ikonján látszó szám: a kiválasztott lejáró tételek és a bevásárlólista még meg nem vett tételei együtt, minden teredből.";

@@ -7,3 +7,14 @@
 "STORE_FOOTER" = "When you arrive at a shop of a chain with items waiting on your list, Larari reminds you. Your location stays on this iPhone.";
 "INVENTORY_TOGGLE" = "Add purchases to inventory";
 "INVENTORY_FOOTER" = "Off: a bought item only leaves the list. You can still add a single purchase to inventory.";
+"BADGE_GROUP" = "App Icon Badge";
+"BADGE_EXPIRY" = "Expiring Items";
+"BADGE_SOON" = "Expired and within 14 days";
+"BADGE_SOON_SHORT" = "Within 14 days";
+"BADGE_CRITICAL" = "Expired and within 3 days";
+"BADGE_CRITICAL_SHORT" = "Within 3 days";
+"BADGE_EXPIRED" = "Expired only";
+"BADGE_EXPIRED_SHORT" = "Expired";
+"BADGE_NONE" = "None";
+"BADGE_SHOPPING" = "Shopping List";
+"BADGE_FOOTER" = "The number on the app icon: the chosen expiring items plus the shopping list items not yet bought, from all your spaces.";

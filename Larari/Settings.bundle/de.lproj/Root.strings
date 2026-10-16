@@ -7,3 +7,14 @@
 "STORE_FOOTER" = "Wenn du ein Geschäft einer Kette erreichst, für die Artikel auf deiner Liste warten, erinnert dich Larari. Dein Standort bleibt auf diesem iPhone.";
 "INVENTORY_TOGGLE" = "Einkäufe in den Bestand";
 "INVENTORY_FOOTER" = "Aus: Ein gekaufter Artikel verschwindet nur von der Liste. Einzelne Einkäufe kannst du trotzdem in den Bestand übernehmen.";
+"BADGE_GROUP" = "App-Symbol-Kennzeichen";
+"BADGE_EXPIRY" = "Ablaufende Artikel";
+"BADGE_SOON" = "Abgelaufen und in 14 Tagen";
+"BADGE_SOON_SHORT" = "In 14 Tagen";
+"BADGE_CRITICAL" = "Abgelaufen und in 3 Tagen";
+"BADGE_CRITICAL_SHORT" = "In 3 Tagen";
+"BADGE_EXPIRED" = "Nur abgelaufen";
+"BADGE_EXPIRED_SHORT" = "Abgelaufen";
+"BADGE_NONE" = "Keine";
+"BADGE_SHOPPING" = "Einkaufsliste";
+"BADGE_FOOTER" = "Die Zahl auf dem App-Symbol: die gewählten ablaufenden Artikel plus die noch nicht gekauften Artikel der Einkaufsliste, aus all deinen Bereichen.";

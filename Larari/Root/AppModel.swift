@@ -428,7 +428,8 @@ final class AppModel {
     }
 
     /// Merges and deduplicates imported history, flashes rows others changed, and refreshes the expiry
-    /// schedule and badge when anything it depends on changed.
+    /// schedule and badge when anything it depends on changed: a shopping change too, when Ikonjelvény ▸
+    /// Bevásárlólista is on (P2-10b).
     private func startRemoteChanges(for container: ServiceContainer) {
         remoteChanges?.stop()
         guard let processor = container.history else { return }
@@ -437,11 +438,14 @@ final class AppModel {
         let storeReminders = container.storeReminders
         let shoppingActivity = container.shoppingActivity
         let widgetSnapshots = container.widgetSnapshots
+        let preferences = container.notificationPreferences
         let observer = RemoteChangeObserver(container: persistence.container, processor: processor) { batch in
             widgetSnapshots?.scheduleRefresh()
             attribution.record(batch.foreignChanges)
             let scheduleRelevant: Set<String> = ["Space", "Product", "InventoryItem", "StorageLocation"]
-            if !batch.changedEntityNames.isDisjoint(with: scheduleRelevant) {
+            let shoppingChanged = !batch.changedEntityNames.isDisjoint(with: ["ShoppingListItem", "ShoppingList"])
+            if !batch.changedEntityNames.isDisjoint(with: scheduleRelevant)
+                || (shoppingChanged && preferences.badge.includesShopping) {
                 notifications.scheduleRefresh(.remoteChange)    // also refreshes the badge
             }
             if !batch.changedEntityNames.isDisjoint(with: ["ShoppingListItem", "ShoppingLocation", "ShoppingList"]) {
