@@ -58,7 +58,16 @@ struct HouseholdSpaceSections<TrailingContent: View>: View {
         }
     }
 
-    private var iCloudSection: some View {
+    @ViewBuilder private var iCloudSection: some View {
+        #if DEBUG
+        // App Store screenshots (T-02): local mode's "Sync needs iCloud" note would show on the family frame.
+        if !UITestHooks.isDemo { iCloudSectionContent }
+        #else
+        iCloudSectionContent
+        #endif
+    }
+
+    private var iCloudSectionContent: some View {
         Section {
             SyncStatusRow()
         } header: {
@@ -109,12 +118,14 @@ struct HouseholdSpaceSections<TrailingContent: View>: View {
                     .accessibilityIdentifier("household.sharing.manage")
             }
             #if DEBUG
-            LabeledContent("household.sharing.zoneCheck") {
-                Text(verbatim: zoneCheckCount.map(String.init) ?? "…")
-            }
-            .accessibilityIdentifier("household.sharing.zoneCheck")
-            .task(id: space.objectID) {
-                zoneCheckCount = await sharing.objectsOutsideShareZone(in: space).count   // the zone lookups block (P5-06)
+            if !UITestHooks.isDemo {
+                LabeledContent("household.sharing.zoneCheck") {
+                    Text(verbatim: zoneCheckCount.map(String.init) ?? "…")
+                }
+                .accessibilityIdentifier("household.sharing.zoneCheck")
+                .task(id: space.objectID) {
+                    zoneCheckCount = await sharing.objectsOutsideShareZone(in: space).count   // the zone lookups block (P5-06)
+                }
             }
             #endif
         } header: {

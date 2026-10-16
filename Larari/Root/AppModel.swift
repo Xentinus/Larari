@@ -364,6 +364,7 @@ final class AppModel {
             try? await UITestSeed.populate(container, in: personalSpace)
             if UITestHooks.seedsStoreItems { try? UITestSeed.populateStoreItems(container, in: personalSpace) }
         }
+        if UITestHooks.isDemo { try? await DemoSeed.populate(container, in: personalSpace) }
         if UITestHooks.simulatesAttribution {
             let tracker = AttributionTracker(window: .seconds(120))
             let milk = try? container.products.products(in: personalSpace).first { $0.name == "Milk" }
