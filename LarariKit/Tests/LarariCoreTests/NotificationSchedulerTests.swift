@@ -129,4 +129,53 @@ struct NotificationSchedulerTests {
         await coordinator.refresh()
         #expect(await !pending(NotificationPlanner.dailyPrefix).isEmpty)
     }
+
+    /// P2-10b: the badge follows Settings ▸ Larari ▸ Ikonjelvény.
+    @Test func badgeFollowsTheChosenContent() async throws {
+        let env = try ServiceTestEnvironment()
+        try env.stock(try await env.makeProduct("Milk"), 1, expiresInDays: -1)
+        let service = ShoppingService(spaceStore: env.spaceStore, context: env.context,
+                                      userRecordName: ServiceTestEnvironment.user)
+        let list = try service.createList(name: "Heti", in: env.personal)
+        for name in ["Kenyér", "Tej"] { try service.addItem(to: list, customName: name) }
+        let suite = "NotificationSchedulerTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let center = FakeNotificationCenter()
+        let coordinator = ExpiryNotificationCoordinator(context: env.context, center: center,
+                                                        preferences: NotificationPreferences(defaults: defaults),
+                                                        calendar: ServiceTestEnvironment.budapest, locale: Self.en,
+                                                        debounce: .zero, now: { ServiceTestEnvironment.fixedNow })
+
+        await coordinator.refresh()
+        #expect(await center.badge == 1, "defaults: expiring only")
+
+        defaults.set(true, forKey: NotificationPreferences.badgeShoppingKey)
+        await coordinator.refresh()
+        #expect(await center.badge == 3)
+
+        defaults.set(ExpiryBadgeMode.off.rawValue, forKey: NotificationPreferences.badgeExpiryKey)
+        await coordinator.refresh()
+        #expect(await center.badge == 2)
+        #expect(coordinator.lastBadgeCount == 2)
+    }
+
+    @Test func bothPartsOffClearTheBadge() async throws {
+        let env = try ServiceTestEnvironment()
+        try env.stock(try await env.makeProduct("Milk"), 1, expiresInDays: -1)
+        let suite = "NotificationSchedulerTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let center = FakeNotificationCenter()
+        let coordinator = ExpiryNotificationCoordinator(context: env.context, center: center,
+                                                        preferences: NotificationPreferences(defaults: defaults),
+                                                        calendar: ServiceTestEnvironment.budapest, locale: Self.en,
+                                                        debounce: .zero, now: { ServiceTestEnvironment.fixedNow })
+        await coordinator.refresh()
+        #expect(await center.badge == 1)
+
+        defaults.set(ExpiryBadgeMode.off.rawValue, forKey: NotificationPreferences.badgeExpiryKey)
+        await coordinator.refresh()
+        #expect(await center.badge == 0, "a 0 clears the number on the icon")
+    }
 }
