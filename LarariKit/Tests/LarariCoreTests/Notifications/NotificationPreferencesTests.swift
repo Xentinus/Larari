@@ -42,4 +42,43 @@ struct NotificationPreferencesTests {
             }
         }
     }
+
+    // MARK: Badge (P2-10b)
+
+    @Test func missingBadgeValuesMeanTodaysBadge() {
+        withDefaults { #expect(NotificationPreferences(defaults: $0).badge == .standard) }
+        #expect(BadgeContent.standard == BadgeContent(expiry: .soon, includesShopping: false))
+    }
+
+    @Test func unknownExpiryValueMeansSoon() {
+        withDefaults { defaults in
+            defaults.set("week", forKey: NotificationPreferences.badgeExpiryKey)
+            #expect(NotificationPreferences(defaults: defaults).badge.expiry == .soon)
+        }
+    }
+
+    @Test func everyExpiryValueIsRead() {
+        withDefaults { defaults in
+            for mode in ExpiryBadgeMode.allCases {
+                defaults.set(mode.rawValue, forKey: NotificationPreferences.badgeExpiryKey)
+                #expect(NotificationPreferences(defaults: defaults).badge.expiry == mode)
+            }
+        }
+    }
+
+    @Test func shoppingSwitchIsRead() {
+        withDefaults { defaults in
+            defaults.set(true, forKey: NotificationPreferences.badgeShoppingKey)
+            #expect(NotificationPreferences(defaults: defaults).badge.includesShopping)
+            defaults.set(false, forKey: NotificationPreferences.badgeShoppingKey)
+            #expect(!NotificationPreferences(defaults: defaults).badge.includesShopping)
+        }
+    }
+
+    @Test func shoppingSwitchReadsALaunchArgumentString() {
+        withDefaults { defaults in
+            defaults.set("YES", forKey: NotificationPreferences.badgeShoppingKey)
+            #expect(NotificationPreferences(defaults: defaults).badge.includesShopping)
+        }
+    }
 }

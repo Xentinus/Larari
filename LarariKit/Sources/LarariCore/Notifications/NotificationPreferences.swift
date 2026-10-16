@@ -10,13 +10,15 @@ public struct NotificationKinds: OptionSet, Sendable, Hashable {
     public static let all: NotificationKinds = [.daily, .weekly]
 }
 
-/// The Settings ▸ Larari ▸ Notifications switches (P2-10a), first set by the choice after "Get started". Per device.
-/// A missing value means on, the behaviour before the switches existed. `@MainActor` like `PurchaseDefaults`, since
-/// `UserDefaults` is not `Sendable` on this SDK.
+/// The Settings ▸ Larari ▸ Notifications switches (P2-10a), first set by the choice after "Get started", and the
+/// Ikonjelvény values (P2-10b). Per device. A missing summary value means on, the behaviour before the switches
+/// existed. `@MainActor` like `PurchaseDefaults`, since `UserDefaults` is not `Sendable` on this SDK.
 @MainActor
 public struct NotificationPreferences {
     public static let dailyKey = "dailySummaryEnabled"
     public static let weeklyKey = "weeklySummaryEnabled"
+    public static let badgeExpiryKey = "badgeExpiry"
+    public static let badgeShoppingKey = "badgeShoppingEnabled"
 
     private let defaults: UserDefaults
 
@@ -29,6 +31,14 @@ public struct NotificationPreferences {
         if isOn(Self.dailyKey) { kinds.insert(.daily) }
         if isOn(Self.weeklyKey) { kinds.insert(.weekly) }
         return kinds
+    }
+
+    /// The Settings ▸ Larari ▸ Ikonjelvény values (P2-10b). A missing or unknown expiry value means 14 days and a
+    /// missing shopping value means off, so a device that never opened the group keeps the badge it had.
+    public var badge: BadgeContent {
+        let expiry = defaults.string(forKey: Self.badgeExpiryKey).flatMap(ExpiryBadgeMode.init(rawValue:))
+        return BadgeContent(expiry: expiry ?? BadgeContent.standard.expiry,
+                            includesShopping: defaults.bool(forKey: Self.badgeShoppingKey))
     }
 
     public func set(_ kinds: NotificationKinds) {
