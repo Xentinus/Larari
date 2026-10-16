@@ -10,15 +10,20 @@ final class AppStoreScreenshotTests: XCTestCase {
         let milk: String
         /// The demo household's name in the space menu.
         let household: String
+        /// Tab titles in order (Inventory, Shopping, Search); the iPad sidebar goes by title.
+        let tabs: [String]
     }
 
     override func setUp() {
         continueAfterFailure = true
     }
 
-    @MainActor func testEnglish() { capture(Language(code: "en", locale: "en_US", milk: "Milk", household: "Our home")) }
-    @MainActor func testHungarian() { capture(Language(code: "hu", locale: "hu_HU", milk: "Tej", household: "Otthon")) }
-    @MainActor func testGerman() { capture(Language(code: "de", locale: "de_DE", milk: "Milch", household: "Zuhause")) }
+    @MainActor func testEnglish() { capture(Language(code: "en", locale: "en_US", milk: "Milk", household: "Our home",
+                                                   tabs: ["Inventory", "Shopping", "Search"])) }
+    @MainActor func testHungarian() { capture(Language(code: "hu", locale: "hu_HU", milk: "Tej", household: "Otthon",
+                                                     tabs: ["Készlet", "Bevásárlás", "Keresés"])) }
+    @MainActor func testGerman() { capture(Language(code: "de", locale: "de_DE", milk: "Milch", household: "Zuhause",
+                                                  tabs: ["Vorrat", "Einkaufen", "Suchen"])) }
 
     @MainActor
     private func capture(_ language: Language) {
@@ -35,7 +40,7 @@ final class AppStoreScreenshotTests: XCTestCase {
             start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
             return true
         }
-        shoot(language, "4-shopping", grouping: "location") { app in self.tab(1, in: app) }
+        shoot(language, "4-shopping", grouping: "location") { app in self.tab(1, language, in: app) }
         shoot(language, "5-family", grouping: "location") { app in
             let switcher = app.buttons["spaceSwitcher"].firstMatch
             guard switcher.waitForExistence(timeout: 10) else { return false }
@@ -57,7 +62,7 @@ final class AppStoreScreenshotTests: XCTestCase {
                                           extraArguments: ["-uiTestDemo", "-uiTestInventoryGrouping", grouping])
         app.launch()
         defer { app.terminate() }
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 15), "\(name): no tab bar")
+        XCTAssertTrue(app.buttons["spaceSwitcher"].firstMatch.waitForExistence(timeout: 15), "\(name): not launched")
         guard navigate(app) else {
             XCTFail("\(language.code) \(name): could not reach the screen")
             return
@@ -70,9 +75,13 @@ final class AppStoreScreenshotTests: XCTestCase {
         add(shot)
     }
 
-    /// Tabs by position, because their titles are localised.
+    /// iPhone: the tab bar by position. iPad: the sidebar or floating tab bar by the localised title.
     @MainActor
-    private func tab(_ index: Int, in app: XCUIApplication) -> Bool {
+    private func tab(_ index: Int, _ language: Language, in app: XCUIApplication) -> Bool {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            app.openTab(language.tabs[index])
+            return true
+        }
         let button = app.tabBars.buttons.element(boundBy: index)
         guard button.waitForExistence(timeout: 10) else { return false }
         button.tap()
