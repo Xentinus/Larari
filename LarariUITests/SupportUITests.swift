@@ -2,7 +2,7 @@ import XCTest
 
 /// X-03: the "Larari" section at the bottom of the space settings sheet (Apple-native option B, user choice
 /// 2026-09-26): one "Support development ↗" button and the guide §9.2 copy verbatim as its footer.
-/// The button is not tapped: that would load a web page, and UI tests make no network calls.
+/// UI tests make no network calls: under UI tests the button opens a local stand-in instead of the web page.
 final class SupportUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -36,6 +36,19 @@ final class SupportUITests: XCTestCase {
         attachment.name = "support"
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    /// The page opens over the settings sheet and both stay up. With the sheet modifier on the whole Section, the
+    /// List handed it to the header, the row and the footer, and opening the page closed every sheet at once.
+    @MainActor
+    func testOpeningThePageKeepsTheSettingsSheet() {
+        let app = openSettings(language: "en")
+        app.buttons["support.open"].tap()
+        XCTAssertTrue(app.staticTexts["support.page"].waitForExistence(timeout: 5))
+        sleep(3)
+        XCTAssertTrue(app.staticTexts["support.page"].exists)
+        app.swipeDown(velocity: .fast)
+        XCTAssertTrue(app.buttons["space.settings.done"].waitForExistence(timeout: 5))
     }
 
     @MainActor

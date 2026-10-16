@@ -24,16 +24,30 @@ struct SupportSection: View {
             }
             .accessibilityIdentifier("support.open")
             .accessibilityHint(Text("support.open.hint"))
+            // On the button, not the Section: a List hands a Section's modifiers to its header, row and footer,
+            // and three presenters for one binding closed every sheet the moment the page opened.
+            .sheet(isPresented: $showsPage) {
+                page
+            }
         } header: {
             Text(verbatim: "Larari")
         } footer: {
             Text("support.body")
                 .accessibilityIdentifier("support.body")
         }
-        .sheet(isPresented: $showsPage) {
-            SafariView(url: SupportLink.url)
-                .ignoresSafeArea()
+    }
+
+    @ViewBuilder private var page: some View {
+        #if DEBUG
+        if UITestHooks.isActive {
+            // UI tests make no network calls: a local stand-in takes the web page's place.
+            Text(verbatim: "support.page").accessibilityIdentifier("support.page")
+        } else {
+            SafariView(url: SupportLink.url).ignoresSafeArea()
         }
+        #else
+        SafariView(url: SupportLink.url).ignoresSafeArea()
+        #endif
     }
 }
 
